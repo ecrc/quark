@@ -88,3 +88,10 @@ Funding
 
 QUARK is funded in part by the National Science Foundation, Department
 of Energy, Microsoft, and the MathWorks.
+
+
+Software changes:
+---------------------
+This software is copy of quark from http://icl.cs.utk.edu/plasma/custom/index.html?lid=124&slid=232 with 
+some slight changes in the header file to expose some private functions:
+intptr_t QUARK_Task_Flag_Get( Quark *quark, int flag );
