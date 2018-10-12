@@ -9,7 +9,7 @@
  * QUARK is a software package provided by Univ. of Tennessee,
  * Univ. of California Berkeley and Univ. of Colorado Denver.
  *
- * @version 2.4.5
+ * @version 2.5.0
  * @author Asim YarKhan
  * @date 2010-11-15
  *
@@ -170,7 +170,8 @@ typedef struct quark_task_s {
     unsigned char *lock_to_thread_mask;
     char *task_label;            /* Label for this task, used in dot_dag generation */
     char *task_color;            /* Color for this task, used in dot_dag generation */
-    int priority;                    /* Is this a high priority task */
+    int start_code, stop_code;   /* Codes for start/stop event of the function call */
+    int priority;                /* Is this a high priority task */
     Quark_Sequence *sequence;
     struct ll_list_node_s *ptr_to_task_in_sequence; /* convenience pointer to this task in the sequence */
     int task_thread_count;                /* Num of threads required by task */
@@ -248,7 +249,8 @@ static int compare_task_priority_tree_nodes( task_priority_tree_node_t *n1, task
     return diff;
 }
 /* Generate red-black tree functions */
-RB_GENERATE( task_priority_tree_head_s, task_priority_tree_node_s, n_entry, compare_task_priority_tree_nodes );
+RB_PROTOTYPE_STATIC( task_priority_tree_head_s, task_priority_tree_node_s, n_entry, compare_task_priority_tree_nodes )
+RB_GENERATE_STATIC( task_priority_tree_head_s, task_priority_tree_node_s, n_entry, compare_task_priority_tree_nodes )
 
 
 /* **************************************************************************** */
@@ -273,15 +275,9 @@ static void quark_remove_completed_task_and_check_for_ready(Quark *quark, Task *
 static void quark_process_completed_tasks(Quark *quark);
 static void quark_address_set_node_free( void* data );
 static inline void quark_fatal_error(const char *func_name, char* msg_text);
-
-/* External functions, mostly implemented in quarkos.c */
-int quark_setaffinity(int rank);
-void quark_topology_init();
-void quark_topology_finalize();
-int quark_get_numthreads();
-int *quark_get_affthreads();
-int quark_yield();
-int quark_getenv_int(char* name, int defval);
+static void quark_address_set_node_wait(Quark *quark, Address_Set_Node *address_set_node);
+Task *quark_set_task_flags_in_task_structure( Quark *quark, Task *task, Quark_Task_Flags *task_flags );
+static void quark_avoid_war_dependencies( Quark *quark, Address_Set_Node *asn_old, Task *parent_task );
 
 /* **************************************************************************** */
 /**
@@ -289,7 +285,7 @@ int quark_getenv_int(char* name, int defval);
  * profile the costs of these pthreads routines.
  */
 inline static int pthread_mutex_lock_address_set(pthread_mutex_t *mtx) { int rv;  if ((rv=pthread_mutex_lock( mtx ))!=0) { quark_fatal_error("pthread_mutex_lock_address_set", strerror(rv)); } return rv; }
-inline static int pthread_mutex_trylock_address_set(pthread_mutex_t *mtx) { int rv;  rv=pthread_mutex_trylock( mtx ); return rv; }
+/* inline static int pthread_mutex_trylock_address_set(pthread_mutex_t *mtx) { int rv;  rv=pthread_mutex_trylock( mtx ); return rv; } */
 inline static int pthread_mutex_unlock_address_set(pthread_mutex_t *mtx) { int rv;  if ((rv=pthread_mutex_unlock( mtx ))!=0) { quark_fatal_error("pthread_mutex_unlock_address_set", strerror(rv)); } return rv; }
 
 inline static int pthread_mutex_lock_ready_list(pthread_mutex_t *mtx) { int rv;  if ((rv=pthread_mutex_lock( mtx ))!=0) { quark_fatal_error("pthread_mutex_lock_ready_list", strerror(rv)); } return rv; }
@@ -301,7 +297,7 @@ inline static int pthread_mutex_unlock_task(pthread_mutex_t *mtx) { int rv;  if 
 
 inline static int pthread_mutex_lock_atomic_add(pthread_mutex_t *mtx) { int rv;  if ((rv=pthread_mutex_lock( mtx ))!=0) { quark_fatal_error("pthread_mutex_lock_atomic_add", strerror(rv)); } return rv; }
 inline static int pthread_mutex_lock_atomic_set(pthread_mutex_t *mtx)  { int rv;  if ((rv=pthread_mutex_lock( mtx ))!=0) { quark_fatal_error("pthread_mutex_lock_atomic_set", strerror(rv)); } return rv; }
-inline static int pthread_mutex_lock_atomic_get(pthread_mutex_t *mtx) { int rv;  if ((rv=pthread_mutex_lock( mtx ))!=0) { quark_fatal_error("pthread_mutex_lock_atomic_get", strerror(rv)); } return rv; }
+/* inline static int pthread_mutex_lock_atomic_get(pthread_mutex_t *mtx) { int rv;  if ((rv=pthread_mutex_lock( mtx ))!=0) { quark_fatal_error("pthread_mutex_lock_atomic_get", strerror(rv)); } return rv; } */
 inline static int pthread_mutex_unlock_atomic(pthread_mutex_t *mtx) { int rv;  if ((rv=pthread_mutex_unlock( mtx ))!=0) { quark_fatal_error("pthread_mutex_unlock_atomic", strerror(rv)); } return rv; }
 
 inline static int pthread_mutex_lock_wrap(pthread_mutex_t *mtx) { int rv;  if ((rv=pthread_mutex_lock( mtx ))!=0) { quark_fatal_error("pthread_mutex_lock_wrap", strerror(rv)); } return rv; }
@@ -310,7 +306,7 @@ inline static int pthread_mutex_unlock_wrap(pthread_mutex_t *mtx) { int rv;  if 
 inline static int pthread_mutex_lock_completed_tasks(pthread_mutex_t *mtx) { int rv;  if ((rv=pthread_mutex_lock( mtx ))!=0) { quark_fatal_error("pthread_mutex_lock_completed_tasks", strerror(rv)); } return rv; }
 inline static int pthread_mutex_trylock_completed_tasks(pthread_mutex_t *mtx) { int rv;  rv=pthread_mutex_trylock( mtx ); return rv; }
 inline static int pthread_mutex_unlock_completed_tasks(pthread_mutex_t *mtx) { int rv;  if ((rv=pthread_mutex_unlock( mtx ))!=0) { quark_fatal_error("pthread_mutex_unlock_completed_tasks", strerror(rv)); } return rv; }
-inline static int pthread_cond_wait_ready_list( pthread_cond_t *cond, pthread_mutex_t *mtx ) { int rv; if ((rv=pthread_cond_wait( cond, mtx))!=0) { quark_fatal_error("pthread_cond_wait_ready_list", strerror(rv)); } return rv; }
+/* inline static int pthread_cond_wait_ready_list( pthread_cond_t *cond, pthread_mutex_t *mtx ) { int rv; if ((rv=pthread_cond_wait( cond, mtx))!=0) { quark_fatal_error("pthread_cond_wait_ready_list", strerror(rv)); } return rv; } */
 inline static int pthread_cond_wait_wrap( pthread_cond_t *cond, pthread_mutex_t *mtx ) { int rv; if ((rv=pthread_cond_wait( cond, mtx))!=0) { quark_fatal_error("pthread_cond_wait_wrap", strerror(rv)); } return rv; }
 
 
@@ -334,7 +330,7 @@ FILE *dot_dag_file = NULL;
 #define dot_dag_print_edge( quark, parentid, parent_level, childid, child_level, color) \
     if ( quark->dot_dag_enable ) {                                      \
         pthread_mutex_lock_wrap( &quark->dot_dag_mutex );               \
-        if ( parentid>0 ) fprintf(dot_dag_file, "t%lld->t%lld [color=\"%s\"];\n", parentid, childid, color); \
+        if ( parentid>0 ) fprintf(dot_dag_file, "t%llu->t%llu [color=\"%s\"];\n", (parentid), (childid), (color)); \
         fflush(dot_dag_file);                                           \
         child_level = (parent_level+1 <= child_level ? child_level : parent_level+1 ); \
         pthread_mutex_unlock_wrap( &quark->dot_dag_mutex );             \
@@ -441,6 +437,8 @@ static Task *quark_task_new()
     task->ptr_to_task_in_sequence = NULL;
     task->sequence = NULL;
     task->priority = QUARK_TASK_MIN_PRIORITY;
+    task->start_code = QUARK_TASK_DEFAULT_START_CODE;
+    task->stop_code  = QUARK_TASK_DEFAULT_STOP_CODE;
     task->task_label = quark_task_default_label;
     task->task_color = quark_task_default_color;
     task->lock_to_thread = -1;
@@ -464,15 +462,15 @@ static void *quark_task_delete(Quark *quark, Task *task)
 {
     /* task is not just allocated, it has been inserted and may have other references to it */
     if ( task->status!=ALLOCATED_ONLY ) {
-        quark_trace_deltask();
         pthread_mutex_lock_wrap( &quark->task_set_mutex );
         icl_hash_delete( quark->task_set, &task->taskid, NULL, NULL );
         quark->num_tasks--;
         pthread_mutex_lock_task( &task->task_mutex );
         pthread_mutex_unlock_wrap( &quark->task_set_mutex );
     }
-    if ( task->task_color!=NULL && task->task_color!=quark_task_default_color ) { free(task->task_color); task->task_color = NULL; }
-    if ( task->task_label!=NULL && task->task_label!=quark_task_default_label ) { free(task->task_label); task->task_label = NULL; }
+    if ( task->task_color!=NULL && task->task_color!=quark_task_default_color ) free(task->task_color);
+    if ( task->task_label!=NULL && task->task_label!=quark_task_default_label ) free(task->task_label);
+    if ( task->lock_to_thread_mask!=NULL ) free(task->lock_to_thread_mask);
     icl_list_destroy(task->args_list, free);
     icl_list_destroy(task->dependency_list, free);
     icl_list_destroy(task->scratch_list, free);
@@ -923,8 +921,8 @@ void QUARK_Barrier(Quark * quark)
     if ( quark->dot_dag_enable ) {
         /* If dag generation is enabled, reset level counters */
         unsigned long long tasklevel = 0;
-        for ( tasklevel=1; tasklevel<tasklevel_width_max_level; tasklevel++ ) 
-            if ( quark->tasklevel_width[tasklevel] == 0 ) 
+        for ( tasklevel=1; tasklevel<tasklevel_width_max_level; tasklevel++ )
+            if ( quark->tasklevel_width[tasklevel] == 0 )
                 break;
         tasklevel = tasklevel -1;
         int tmpint; icl_entry_t* tmpent; void *kp, *dp;
@@ -1033,9 +1031,15 @@ Task *quark_set_task_flags_in_task_structure( Quark *quark, Task *task, Quark_Ta
     if ( task_flags ) {
         if ( task_flags->task_priority ) task->priority = task_flags->task_priority;
         if ( task_flags->task_lock_to_thread >= 0 ) task->lock_to_thread = task_flags->task_lock_to_thread;
-        if ( task_flags->task_lock_to_thread_mask ) task->lock_to_thread_mask = task_flags->task_lock_to_thread_mask;
+        if ( task_flags->task_lock_to_thread_mask ) {
+            int sizeofthreadmask = ( quark->num_threads%8==0 ? quark->num_threads/8 : quark->num_threads/8 + 1);
+            if ( task->lock_to_thread_mask==NULL ) task->lock_to_thread_mask = quark_malloc( sizeofthreadmask );
+            memcpy( task->lock_to_thread_mask, task_flags->task_lock_to_thread_mask, sizeofthreadmask );
+        }
         if ( task_flags->task_color && quark->dot_dag_enable ) task->task_color = strdup(task_flags->task_color);
         if ( task_flags->task_label && quark->dot_dag_enable ) task->task_label = strdup(task_flags->task_label);
+        if ( task_flags->start_code ) task->start_code = task_flags->start_code;
+        if ( task_flags->stop_code  ) task->stop_code  = task_flags->stop_code;
         if ( task_flags->task_sequence ) task->sequence = task_flags->task_sequence;
         if ( task_flags->task_thread_count > 1 ) task->task_thread_count = task_flags->task_thread_count;
         if ( task_flags->thread_set_to_manual_scheduling >= 0 ) task->thread_set_to_manual_scheduling = task_flags->thread_set_to_manual_scheduling;
@@ -1183,6 +1187,7 @@ unsigned long long QUARK_Insert_Task_Packed(Quark * quark, Task *task )
     long long num_tasks = -1;
     unsigned long long taskid = task->taskid;
     Quark_Sequence *sequence;
+    quark_trace_event_start(INSERT_TASK_PACKED);
     task->task_thread_count_outstanding = task->task_thread_count;
     /* Track sequence information if it is provided */
     if ( task->sequence ) {
@@ -1221,10 +1226,13 @@ unsigned long long QUARK_Insert_Task_Packed(Quark * quark, Task *task )
     quark_check_and_queue_ready_task( quark, task, -1 );
     pthread_mutex_unlock_task( &task->task_mutex );
 
+    quark_trace_event_end();
+
     /* If conditions are right, task insertion blocks and master
      * works; this will return when num_tasks becomes less than
      * low_water_mark */
     quark_process_completed_tasks(quark);
+
     while ( (quark->high_water_mark>0) && (num_tasks>=quark->high_water_mark) ) {
         num_tasks = quark_work_main_loop(quark->worker[0]);
         quark_process_completed_tasks(quark);
@@ -1267,8 +1275,8 @@ unsigned long long QUARK_Insert_Task(Quark * quark, void (*function) (Quark *), 
     int arg_size;
     unsigned long long taskid;
 
+    quark_trace_event_start(INSERT_TASK);
     Task *task = QUARK_Task_Init(quark, function, task_flags);
-
     /* For each argument */
     va_start(varg_list, task_flags);
     while( (arg_size = va_arg(varg_list, int)) != 0) {
@@ -1278,9 +1286,50 @@ unsigned long long QUARK_Insert_Task(Quark * quark, void (*function) (Quark *), 
     }
     va_end(varg_list);
 
+    quark_trace_event_end();
     taskid = QUARK_Insert_Task_Packed( quark, task );
 
     return taskid;
+}
+
+/* **************************************************************************** */
+unsigned long long QUARK_Execute_Task_Packed( Quark * quark, Quark_Task *task )
+{
+    /* For each dependency, wait till it is synced and empty */
+    icl_list_t *dep_node;
+    for (dep_node = icl_list_first(task->dependency_list);
+         dep_node != NULL &&  dep_node->data!=NULL;
+         dep_node = icl_list_next(task->dependency_list, dep_node)) {
+        Dependency *dep = (Dependency *)dep_node->data;
+        pthread_mutex_lock_address_set( &quark->address_set_mutex );
+        Address_Set_Node *address_set_node = (Address_Set_Node *)icl_hash_find( quark->address_set, dep->address );
+        pthread_mutex_unlock_address_set( &quark->address_set_mutex );
+        if ( address_set_node != NULL ) {
+            dep->address_set_node_ptr = address_set_node;
+            quark_address_set_node_wait( quark, address_set_node );
+        }
+    }
+
+    int thread_rank = QUARK_Thread_Rank(quark);
+    Worker *worker = quark->worker[thread_rank];
+    if ( task->function == NULL ) {
+        /* This can occur if the task is cancelled */
+        task->status = CANCELLED;
+    } else {
+        /* Call the task */
+        task->status = RUNNING;
+        worker->current_task_ptr = task;
+        quark_scratch_allocate( task );
+        quark_trace_function_start( task );
+        task->function( quark );
+        quark_trace_function_stop( task );
+        quark_scratch_deallocate( task );
+        worker->current_task_ptr = NULL;
+        task->status = DONE;
+    }
+
+    /* There is no real taskid to be returned, since the task has been deleted */
+    return( 0 );
 }
 
 /* **************************************************************************** */
@@ -1326,21 +1375,7 @@ unsigned long long QUARK_Execute_Task(Quark * quark, void (*function) (Quark *),
     }
     va_end(varg_list);
 
-    int thread_rank = QUARK_Thread_Rank(quark);
-    Worker *worker = quark->worker[thread_rank];
-    if ( task->function == NULL ) {
-        /* This can occur if the task is cancelled */
-        task->status = CANCELLED;
-    } else {
-        /* Call the task */
-        task->status = RUNNING;
-        worker->current_task_ptr = task;
-        quark_scratch_allocate( task );
-        task->function( quark );
-        quark_scratch_deallocate( task );
-        worker->current_task_ptr = NULL;
-        task->status = DONE;
-    }
+    QUARK_Execute_Task_Packed( quark, task );
 
     /* Delete the task data structures */
     icl_list_destroy(task->args_list, free);
@@ -1441,7 +1476,7 @@ static void quark_check_and_queue_ready_task( Quark *quark, Task *task, int work
     int worker_thread_id = -1;
     Worker *worker = NULL;
     int assigned_thread_count = 0;
-    int first_worker_thread_id_repeated = -1;
+    int first_worker_tid = -1;
     int i = 0;
     int wtid = 0;
 
@@ -1500,7 +1535,7 @@ static void quark_check_and_queue_ready_task( Quark *quark, Task *task, int work
          && ( worker_thread_id == 0 ))
       worker_thread_id++;
 
-    first_worker_thread_id_repeated = worker_thread_id;
+    first_worker_tid = worker_thread_id;
     while ( assigned_thread_count < task->task_thread_count) {
         worker = quark->worker[worker_thread_id];
         /* Create a new entry for the ready list */
@@ -1536,15 +1571,18 @@ static void quark_check_and_queue_ready_task( Quark *quark, Task *task, int work
         }
         if ( assigned_thread_count < task->task_thread_count ) {
             /* NOTE This is a special case, multi-threaded tasks do scheduling strangely */
-            worker_thread_id = (worker_thread_id+1) % quark->num_threads;
-            while ( worker_thread_id != first_worker_thread_id_repeated &&
-                    quark->worker[worker_thread_id]->set_to_manual_scheduling )
-                worker_thread_id = (worker_thread_id+1) % quark->num_threads;
-            /* If it's a parallel task, we try to avoid waiting for thread 0 if possible */
-            if ( ( worker_thread_id == 0 ) && (quark->num_threads > task->task_thread_count) )
-                worker_thread_id++;
-            if ( worker_thread_id == first_worker_thread_id_repeated )
-                quark_fatal_error("quark_check_and_queue_ready_task", "Not enough workers for task" );
+            for ( worker_thread_id = (worker_thread_id+1) % quark->num_threads;
+                  worker_thread_id != first_worker_tid;
+                  worker_thread_id = (worker_thread_id+1) % quark->num_threads) {
+                if (/* worker_thread_id is not set to manual scheduling */
+                    ( quark->worker[worker_thread_id]->set_to_manual_scheduling==FALSE )
+                    /* task is not locked to mask; OR it is stealable by worker_thread_id */
+                    && ( task->lock_to_thread_mask==NULL || QUARK_Bit_Get( task->lock_to_thread_mask,worker_thread_id)==1 )) {
+                    break;
+                }
+            }
+            if ( worker_thread_id == first_worker_tid )
+                quark_fatal_error("quark_check_and_queue_ready_task", "Not enough workers for mutithreaded task" );
         }
     }
 }
@@ -1562,7 +1600,7 @@ static void quark_check_and_queue_ready_task( Quark *quark, Task *task, int work
  * already locked when this is called.
  */
 /* FIXME This entire routine needs to be redone!!  It does not work properly */
-void quark_avoid_war_dependencies( Quark *quark, Address_Set_Node *asn_old, Task *parent_task )
+static void quark_avoid_war_dependencies( Quark *quark, Address_Set_Node *asn_old, Task *parent_task )
 {
     /* Quick return if this is not enabled */
     if ( !quark->war_dependencies_enable ) return;
@@ -1861,15 +1899,8 @@ static void quark_insert_task_dependencies(Quark * quark, Task * task)
                 }
             } else if ( dep->direction == INPUT ) {
                 if ( prev_dep_node != NULL ) {
-                    /* If input, and previous dep is a read that is ready, then ready=true */
-                    Dependency *prev_dep = (Dependency *)prev_dep_node->data;
-                    if ( prev_dep->direction==INPUT && prev_dep->ready==TRUE ) {
-                        dep->ready = TRUE;
-                        dot_dag_print_edge( quark, address_set_node->last_writer_taskid, address_set_node->last_writer_tasklevel, task->taskid, task->tasklevel, DEPCOLOR_RAR );
-                        quark_atomic_add( task->num_dependencies_remaining, -1, &task->task_mutex );
-                    } else {
-                        dep->ready = FALSE;
-                    }
+                    /* If input, and previous dep exists, then ready=false.  (Note: before regions were introduced, looking at the prevous dependency would have been enough to make a determination of readiness.  With regions, when the earlier task working on this data completes,  the waiting dependencies are scanned for whether regions conflict. )*/
+                    dep->ready = FALSE;
                 } else {
                     /* Input, but no previous node (is first), so ready   */
                     dep->ready = TRUE;
@@ -1929,7 +1960,7 @@ static Task *quark_work_main_loop_check_for_task( Quark *quark, Worker *worker, 
     Task *task = NULL;
     int ready_list_victim = worker_rank;
     int worker_finalize = FALSE;
-    int completed_tasks_size;
+    //int completed_tasks_size;
     int quark_num_queued_tasks = 0;
 
     /* Loop while looking for tasks */
@@ -1937,12 +1968,11 @@ static Task *quark_work_main_loop_check_for_task( Quark *quark, Worker *worker, 
     /* worker_finalize = worker->finalize; */
     while ( task==NULL && !worker->finalize ) {
 
-        quark_atomic_get( completed_tasks_size, quark->completed_tasks_size, &quark->completed_tasks_mutex );
         /* FIXME Tuning these statement is important to performance at small tile sizes */
         if ( worker_rank==0 ) quark_process_completed_tasks(quark);
         // else if ( worker->ready_list_size==0 ) quark_process_completed_tasks(quark);
-        // else if ( completed_tasks_size>1 && worker_rank%5==1 ) quark_process_completed_tasks(quark);
-        else if ( completed_tasks_size>1 ) quark_process_completed_tasks(quark);
+        else if ( worker_rank%10==1 && worker->ready_list_size==0 && quark->completed_tasks_size>(20) ) quark_process_completed_tasks(quark);
+        // else if ( completed_tasks_size>1 ) quark_process_completed_tasks(quark);
         // else quark_process_completed_tasks(quark);
 
         worker_victim = quark->worker[ready_list_victim];
@@ -1959,7 +1989,7 @@ static Task *quark_work_main_loop_check_for_task( Quark *quark, Worker *worker, 
                 }
                 pthread_mutex_unlock_ready_list( &worker_victim->worker_mutex );
             }
-        } else if ( worker_rank!=ready_list_victim ) {
+        } else if ( worker_rank!=ready_list_victim && worker_victim->executing_task==TRUE && worker_victim->ready_list_size>0 ) {
             if ( pthread_mutex_trylock_ready_list( &worker_victim->worker_mutex ) == 0) {
                 if ( worker_victim->executing_task==TRUE && worker_victim->ready_list_size>0 ) { /* victim has at least so many tasks */
                     /* DBGPRINTF("Wkr %d [ %d ] Got lock for queue %d [ %d ]\n", worker->rank, worker->ready_list_size, ready_list_victim, worker_victim->ready_list_size ); */
@@ -1993,13 +2023,11 @@ static Task *quark_work_main_loop_check_for_task( Quark *quark, Worker *worker, 
             /* If this worker is allowed to do work stealing, then move and check the next victim queue */
             if ( worker->set_to_manual_scheduling == FALSE )
                 ready_list_victim = (ready_list_victim + 1) % quark->num_threads;
+            /* Break for master when a scan of all queues is finished and no tasks were found or no work is available */
+            if ( worker_rank==0 && ( ready_list_victim==0 || quark->num_queued_tasks==0 ) ) return NULL;
             /* Grab some high level counters */
             quark_atomic_get( quark_num_queued_tasks, quark->num_queued_tasks, &quark->num_queued_tasks_mutex );
             quark_atomic_get( worker_finalize, worker->finalize, &worker->worker_mutex );
-            /* Break for master when a scan of all queues is finished and no tasks were found */
-            if ( worker_rank==0 && ready_list_victim==0 ) return NULL;
-            /* Break for master if there is no work */
-            if ( worker_rank==0 && quark_num_queued_tasks==0 ) return NULL;
             /* Wait for work */
             if ( quark_num_queued_tasks==0 && worker_rank!=0 ) {
                 pthread_mutex_lock_wrap( &quark->num_queued_tasks_mutex );
@@ -2075,11 +2103,15 @@ static long long quark_work_main_loop(Worker *worker)
                 pthread_mutex_unlock_task( &task->task_mutex );
                 worker->current_task_ptr = task;
                 quark_trace_deltask2worker(quark->worker[worker_rank]->thread_id);
+                quark_trace_deltask();
 #ifdef DBGQUARK
                 struct timeval tstart; gettimeofday( &tstart, NULL );
 #endif /* DBGQUARK */
                 /* THIS IS THE ACTUAL CALL TO EXECUTE THE FUNCTION */
+                quark_trace_function_start( task );
                 task->function( quark );
+                quark_trace_function_stop( task );
+
 #ifdef DBGQUARK
                 struct timeval tend; gettimeofday( &tend, NULL );
                 struct timeval tresult; timersub( &tend, &tstart, &tresult );
@@ -2116,9 +2148,9 @@ static long long quark_work_main_loop(Worker *worker)
  * tasks into a group and cancel that group if an error condition
  * occurs.
  *
- * @param[in],out quark
+ * @param[in,out] quark
  *          Pointer to the scheduler data structure
- * @return Pointer to the newly created sequence structure.
+ * @return  Pointer to the newly created sequence structure.
  * @ingroup QUARK
  */
 Quark_Sequence *QUARK_Sequence_Create( Quark *quark )
@@ -2310,6 +2342,7 @@ static void quark_process_completed_tasks( Quark *quark )
     int workerid = -1;
     quark_atomic_get( completed_tasks_size, quark->completed_tasks_size, &quark->completed_tasks_mutex );
     if ( completed_tasks_size==0 ) return;
+    quark_trace_event_start(PROCESS_COMPLETED_TASKS);
     do {
         task = NULL;
         if ( pthread_mutex_trylock_completed_tasks( &quark->completed_tasks_mutex ) == 0 ) {
@@ -2326,6 +2359,7 @@ static void quark_process_completed_tasks( Quark *quark )
         if ( task != NULL )
             quark_remove_completed_task_and_check_for_ready( quark, task, workerid );
     } while ( task!=NULL );
+    quark_trace_event_end();
 }
 
 /* **************************************************************************** */
@@ -2406,12 +2440,12 @@ static void quark_remove_completed_task_and_check_for_ready(Quark *quark, Task *
     if ( quark->dot_dag_enable ) {
         pthread_mutex_lock_wrap( &quark->dot_dag_mutex );
         //if (task->tasklevel < 1) task->tasklevel=1;
-        fprintf(dot_dag_file, "t%lld [fillcolor=\"%s\",label=\"%s\",style=filled]; // %lld %d %p %d %lld \n",
+        fprintf(dot_dag_file, "t%llu [fillcolor=\"%s\",label=\"%s\",style=filled]; // %llu %d %p %d %llu \n",
                 task->taskid, task->task_color, task->task_label, task->taskid, task->priority, task->sequence, task->task_thread_count, task->tasklevel);
         /* Track the width of each task level */
         quark->tasklevel_width[task->tasklevel]++;
         /* fprintf(dot_dag_file, "// critical-path depth %ld \n", task->tasklevel ); */
-        fprintf(dot_dag_file, "{rank=same;%lld;t%lld};\n", task->tasklevel, task->taskid );
+        fprintf(dot_dag_file, "{rank=same;%llu;t%llu};\n", task->tasklevel, task->taskid );
         pthread_mutex_unlock_wrap( &quark->dot_dag_mutex );
     }
 
@@ -2479,7 +2513,7 @@ static void quark_remove_completed_task_and_check_for_ready(Quark *quark, Task *
  *          TASK_SEQUENCE : takes pointer to a Quark_Sequence structure
  *          THREAD_SET_TO_MANUAL_SCHEDULING: boolean integer {0,1} setting thread to manual (1) or automatic (0) scheduling
  *
- * @param[in,out] flags
+ * @param[in,out] task_flags
  *          Pointer to a Quark_Task_Flags structure
  * @param[in] flag
  *          One of the flags listed above
@@ -2509,6 +2543,12 @@ Quark_Task_Flags *QUARK_Task_Flag_Set( Quark_Task_Flags *task_flags, int flag, i
     case TASK_SEQUENCE:
         task_flags->task_sequence = (Quark_Sequence *)val;
         break;
+    case TASK_START_CODE:
+        task_flags->start_code = (int)val;
+        break;
+    case TASK_STOP_CODE:
+        task_flags->stop_code = (int)val;
+        break;
     case TASK_THREAD_COUNT:
         task_flags->task_thread_count = (int)val;
         break;
@@ -2533,6 +2573,8 @@ Quark_Task_Flags *QUARK_Task_Flag_Set( Quark_Task_Flags *task_flags, int flag, i
  *          TASK_SEQUENCE : pointer to a Quark_Sequence structure
  *          THREAD_SET_TO_MANUAL_SCHEDULING: boolean integer {0,1} setting thread to manual (1) or automatic (0) scheduling
  *
+ * @param[in] quark
+ *          Pointer to the scheduler data structure
  * @param[in] flag
  *          One of the flags shown above.
  * @return Intptr type giving the value of the flag; -9 on error
@@ -2594,7 +2636,7 @@ void QUARK_DOT_DAG_Enable( Quark *quark, int enable )
             quark->high_water_mark = (int)(INT_MAX - 1);
             quark->low_water_mark = (int)(quark->high_water_mark);
             /* global FILE variable */
-            if ( dot_dag_file == NULL ) fopen( &dot_dag_file, DOT_DAG_FILENAME, "w" ); 
+            if ( dot_dag_file == NULL ) fopen( &dot_dag_file, DOT_DAG_FILENAME, "w" );
             else fopen( &dot_dag_file, DOT_DAG_FILENAME, "a" );
             fprintf(dot_dag_file, "digraph G { size=\"10,7.5\"; center=1; orientation=portrait; \n");
             pthread_mutex_init( &quark->dot_dag_mutex, NULL );
@@ -2602,7 +2644,7 @@ void QUARK_DOT_DAG_Enable( Quark *quark, int enable )
             /* Reset tasklevel information */
             for (i=0; i<tasklevel_width_max_level; i++ )
                 quark->tasklevel_width[i] = 0;
-            /* Reset the address set nodes information */    
+            /* Reset the address set nodes information */
             int tmpint;
             icl_entry_t* tmpent;
             void *kp, *dp;
@@ -2635,4 +2677,27 @@ void QUARK_DOT_DAG_Enable( Quark *quark, int enable )
     }
 }
 
+/* **************************************************************************** */
+/**
+ * Called internally, from the master thread.  Wait/work till the
+ * address_set_node is empty, that is, it has no more dependencies
+ * waiting to use it.  If this is called by something other than the
+ * master thread, we may have problems.  Originally created for use is
+ * via the QUARK_Execute_Task function.
+ */
+static void quark_address_set_node_wait( Quark *quark, Address_Set_Node *address_set_node )
+{
+    int this_asn_still_has_tasks = 1;
+    int myrank = QUARK_Thread_Rank( quark );
+    while ( this_asn_still_has_tasks ) {
+        pthread_mutex_lock_wrap( &address_set_node->asn_mutex );
+        if ( icl_list_first(address_set_node->waiting_deps) == NULL )
+            this_asn_still_has_tasks = 0;
+        pthread_mutex_unlock_wrap( &address_set_node->asn_mutex );
+        if ( this_asn_still_has_tasks ) {
+            quark_process_completed_tasks( quark );
+            quark_work_main_loop( quark->worker[myrank] );
+        }
+    }
+}
 /* **************************************************************************** */

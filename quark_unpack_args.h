@@ -7,7 +7,7 @@
  * PLASMA is a software package provided by Univ. of Tennessee,
  * Univ. of California Berkeley and Univ. of Colorado Denver
  *
- * @version 2.4.5
+ * @version 2.8.0
  * @author Asim YarKhan
  * @date 2010-11-15
  *
@@ -732,7 +732,7 @@
   memcpy(&arg23, arg, sizeof(arg23)); \
 }
 
-#define quark_unpack_args_24(quark, \
+#define quark_unpack_args_25(quark, \
     arg1, \
     arg2, \
     arg3, \
@@ -756,7 +756,8 @@
     arg21, \
     arg22, \
     arg23, \
-    arg24) \
+    arg24, \
+    arg25) \
 { \
   void *lastarg = NULL; \
   void *args_list = QUARK_Args_List( quark ); \
@@ -784,7 +785,8 @@
   memcpy(&arg21, arg, sizeof(arg21)); arg = QUARK_Args_Pop(args_list, &lastarg); \
   memcpy(&arg22, arg, sizeof(arg22)); arg = QUARK_Args_Pop(args_list, &lastarg); \
   memcpy(&arg23, arg, sizeof(arg23)); arg = QUARK_Args_Pop(args_list, &lastarg); \
-  memcpy(&arg24, arg, sizeof(arg24)); \
+  memcpy(&arg24, arg, sizeof(arg24)); arg = QUARK_Args_Pop(args_list, &lastarg); \
+  memcpy(&arg25, arg, sizeof(arg25)); \
 }
 
 #endif

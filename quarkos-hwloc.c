@@ -8,7 +8,7 @@
  *
  *  Note : this file is a copy of plasmaos-hwloc.c for use of Quark alone.
  *
- * @version 2.4.5
+ * @version 2.8.0
  * @author Piotr Luszczek
  * @author Mathieu Faverge
  * @date 2010-11-15
