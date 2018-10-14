@@ -12,13 +12,11 @@
 ###
 
 prefix=./install
-CC=cc
+CC=gcc
 CFLAGS=-O2
-AR=ar 
-ARFLAGS=cr
+ARCH=ar 
+ARCHFLAGS=cr
 RANLIB=ranlib
 LD=${CC}
 LDLIBS=-lpthread
 
-.c.o:
-	$(CC) $(CFLAGS) -c $< -o $@

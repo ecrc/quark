@@ -1,0 +1,77 @@
+%##################################################################################################
+
+\usepackage{color}
+    \definecolor{dark_blue}{rgb}{0,0,0.6}
+    \definecolor{light_blue}{rgb}{0,0.4,0.8}
+    \definecolor{dark_vilet}{rgb}{0.4,0,0.4}
+\usepackage{fancybox}
+\usepackage{wallpaper}
+\usepackage{url}
+\usepackage[colorlinks,
+            linkcolor=dark_vilet,
+            citecolor=light_blue,
+            urlcolor=dark_blue]{hyperref}
+\usepackage{colortbl}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+%\usepackage[square,comma,sort&compress]{natbib}
+\usepackage[Sonny]{fncychap}
+%%\usepackage{fancyhdr}
+\usepackage{titletoc}
+\usepackage[scaled=.92]{helvet}
+\usepackage{mathptmx}
+\usepackage{subfigure}
+\usepackage{xspace}
+\usepackage{multirow}
+
+%\renewcommand{\headrulewidth}{0.5pt}
+%\renewcommand{\footrulewidth}{0.5pt}
+\ChTitleVar{\huge\sf}
+\ChNameVar{\Huge\sf}
+%\rhead{}
+
+\newcommand{\cdl}[1]{\textsf{#1}}
+\newenvironment{link_url}
+{\begin{description}
+    \item}
+{\end{description}}
+\newenvironment{cmd_line}
+{\begin{description}
+    \item}
+{\end{description}}
+
+\newcommand{\ignore}[1]{}
+\newcommand{\tabwidth}[0]{.45\linewidth}
+\newcommand{\figwidth}[0]{.48\linewidth}
+
+\newcommand\prjfnt{{\small \fontfamily{pag}\selectfont{}}\xspace}
+\newcommand\gefnt{{\small \fontfamily{ppl}\selectfont{}}\xspace}
+\newcommand{\PLASMA}{{\prjfnt{PLASMA}}\xspace}
+\newcommand{\MAGMA}{{\prjfnt{MAGMA}}\xspace}
+\newcommand{\TBLAS}{{\prjfnt{TBLAS}}\xspace}
+\newcommand{\PBLAS}{{\prjfnt{PBLAS}}\xspace}
+\newcommand{\PESSL}{{\prjfnt{PESSL}}\xspace}
+\newcommand{\ESSL}{{\prjfnt{ESSL}}\xspace}
+\newcommand{\SMPSS}{{\prjfnt{SMPSs}}\xspace}
+\newcommand{\SMPSs}{{\prjfnt{SMPSs}}\xspace}
+\newcommand{\MKL}{{\prjfnt{MKL}}\xspace}
+\newcommand{\SCALAPACK}{{\prjfnt{ScaLAPACK}}\xspace}
+\newcommand{\LAPACK}{{\prjfnt{LAPACK}}\xspace}
+\newcommand{\LINPACK}{{\prjfnt{LINPACK}}\xspace}
+\newcommand{\EISPACK}{{\prjfnt{EISPACK}}\xspace}
+\newcommand{\DPOTRF}{{\gefnt{DPOTRF}}\xspace}
+\newcommand{\DGEQRF}{{\gefnt{DGEQRF}}\xspace}
+\newcommand{\DGETRF}{{\gefnt{DGETRF}}\xspace}
+\newcommand{\DGEMM}{{\gefnt{DGEMM}}\xspace}
+\newcommand{\BLAS}{{\gefnt{BLAS}}\xspace}
+\newcommand{\BLACS}{{\gefnt{BLACS}}\xspace}
+\newcommand{\dgemm}{{\gefnt{dgemm-seq}}\xspace}
+\newcommand{\dssrfb}{{\gefnt{dssrfb-seq}}\xspace}
+\newcommand{\dssssm}{{\gefnt{dssssm-seq}}\xspace}
+\newcommand{\Intel}{{\gefnt{Intel64}}\xspace}
+\newcommand{\Power}{{\gefnt{Power6}}\xspace}
+
+%##################################################################################################

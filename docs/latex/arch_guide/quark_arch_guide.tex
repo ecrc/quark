@@ -1,0 +1,775 @@
+\documentclass{article}
+\usepackage[in]{fullpage}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{graphicx,subfigure}
+\usepackage{amsmath}
+\usepackage{psfrag}
+\usepackage{epstopdf}
+\usepackage{colortbl}
+\usepackage[usenames, dvipsnames]{xcolor}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+  language=C,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true
+  tabsize=3
+}
+
+\begin{document}
+
+%\cite{boost_graph}
+
+
+\begin{figure}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l}
+%\rowcolor{dkgreen}
+Task\_1(geqrt, A00, T00)
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+%\newcolumntype{g}{>{\columncolor{LimeGreen}}l}
+\begin{tabular}{l | l  l l }
+Dependency list & $Task\_1$ & \cellcolor{LimeGreen} $t\_1\_A00^{RW}$ & \cellcolor{LimeGreen} $t\_1\_T00^{W}$
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l}
+Task set hash\\
+\hline
+\cellcolor{LimeGreen}Task\_1
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l}
+address set hash& Dependency waiting\\
+\hline
+    &                 \\
+A00 & \cellcolor{LimeGreen} $t\_1\_A00^{RW}$\\
+T00 & \cellcolor{LimeGreen} $t\_1\_T00^{W}$\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l l l l}
+Core \# & Ready queue\\
+\hline
+&\\
+0 & & & &\\
+1 & & & &\\
+2 & & & &\\
+3 & & & &\\
+4 & & & &\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+Description
+
+When Task\_1 is inserted into `QUARK', two data structures are initialized. First, task data structure (Task\_1) is initialized and second, dependency data structures are initialized ($t\_1\_A00^{RW}$, $t\_1\_T00^{W}$). Task data structure keeps track of the function to be executed for the given task and the list of dependencies which must be ready for task to be executed. Dependency data structure keeps track of the memory location (pointer) which will be used as part of this task (function). When any task is created, it is stored in `Task set hash'. Task set hash can be  used to find any task inserted into `QUARK'. Address set hash is used to keep track of all the addresses being used by `QUARK'. Whenever a new task is inserted, say in this case `Task\_1', fist it is checked if the pointer address of any dependency is already present in the `Address hash set'. If yes, then the dependency is appended to the dependency waiting list. If pointer address is not present in the `Address hash set', a new entry is added first and then dependency is appended to the same. Whenever a dependency is appended to the dependency list, it is checked if there is any read-write or write dependency before it. If yes, then the latest appended dependency is not ready and it must wait till the previous read-write or write dependency is complete. Thus it is marked as `NOT ready' (highlighted with red color). In this case, there are no dependencies before the dependencies for Task\_1 hence both dependencies are marked as ready (highlighted with green color). For any task if all the dependencies are ready then it is marked as ready to be placed in a ready queue. Ready queue  is a task queue from which a core picks up tasks for execution. In this case, Task\_1 can be put into one of the ready queues for execution. However, to illustrate the DAG concept we will show how the data structures are updated for insertions of few tasks.
+
+\end{minipage}
+
+\end{figure}
+
+\begin{figure}
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l}
+Task\_2(unmqr, A00, T00, A01)
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l l l l}
+Dependency list & Task\_1 & \cellcolor{LimeGreen} $t\_1\_A00^{RW}$ & \cellcolor{LimeGreen} $t\_1\_T00^{W}$ &\\
+                & Task\_2 & \cellcolor{RedOrange}$t\_2\_A00^{R}$ & \cellcolor{RedOrange}$t\_2\_T00^{R}$ & \cellcolor{LimeGreen}$t\_2\_A01^{RW}$\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l}
+Task set hash\\
+\hline
+\cellcolor{LimeGreen}Task\_1\\
+\cellcolor{RedOrange}Task\_2\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l l}
+address set hash& Dependency&\\
+\hline
+A00 & \cellcolor{LimeGreen} $t\_1\_A00^{RW}$ & \cellcolor{RedOrange}$t\_2\_A00^{R}$\\
+T00 & \cellcolor{LimeGreen} $t\_1\_T00^{W}$ & \cellcolor{RedOrange}$t\_2\_T00^{R}$\\
+A01 & \cellcolor{LimeGreen} $t\_2\_A01^{RW}$ &\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l l l l}
+Core \# & Ready queue\\
+\hline
+&\\
+0 & & & &\\
+1 & & & &\\
+2 & & & &\\
+3 & & & &\\
+4 & & & &\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+Description
+
+When Task\_2 is inserted into `QUARK', two data structures are initialized. First, task data structure (Task\_2) is initialized and second, dependency data structures are initialized ($t\_2\_A00^{R}$, $t\_2\_T00^{W}$, $t\_2\_A01^{RW}$). For `Task\_2', for dependency $t\_2\_A00^{R}$, `QUARK' checks if address A00 is already present in the 'Address set hash', as it is already present, dependency $t\_2\_A00^{R}$ is appended to already existing dependency list. As there is already a dependency with read-write access, dependency $t\_2\_A00^{R}$ is marked as NOT ready (highlighted by red color). As not all the dependency are ready for Task\_2, we mark Task\_2 as NOT ready (highlighted by red color). Similar checks are performed for other dependencies.
+\begin{verbatim}
+
+
+
+
+
+
+
+
+
+\end{verbatim}
+
+\end{minipage}
+
+\end{figure}
+
+\begin{figure}
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l}
+Task\_3(unmqr, A00, T00, A02)
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l  l  l l}
+Dependency list & Task\_1 & \cellcolor{LimeGreen} $t\_1\_A00^{RW}$ & \cellcolor{LimeGreen} $t\_1\_T00^{W}$&\\
+                & Task\_2 & \cellcolor{RedOrange}$t\_2\_A00^{R}$ & \cellcolor{RedOrange}$t\_2\_T00^{R}$ & \cellcolor{LimeGreen}$t\_2\_A01^{RW}$\\
+                & Task\_3 & \cellcolor{RedOrange}$t\_3\_A00^{R}$ & \cellcolor{RedOrange}$t\_3\_T00^{R}$ & \cellcolor{LimeGreen}$t\_2\_A02^{RW}$\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l}
+Task set hash\\
+\hline
+\cellcolor{LimeGreen}Task\_1\\
+\cellcolor{RedOrange}Task\_2\\
+\cellcolor{RedOrange}Task\_3\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l l l}
+address set hash& Dependency waiting& &\\
+\hline
+A00 & \cellcolor{LimeGreen}$t\_1\_A00^{RW}$ & \cellcolor{RedOrange}$t\_2\_A00^{R}$ & \cellcolor{RedOrange} $t\_3\_A00^{R}$\\
+T00 & \cellcolor{LimeGreen}$t\_1\_T00^{W}$ & \cellcolor{RedOrange} $t\_2\_T00^{R}$ & \cellcolor{RedOrange} $t\_3\_T00^{R}$\\
+A01 & \cellcolor{LimeGreen}$t\_2\_A01^{RW}$ & &\\
+A02 & \cellcolor{LimeGreen}$t\_3\_A02^{RW}$ & &\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l l l l}
+Core \# & Ready queue\\
+\hline
+&\\
+0 & & & &\\
+1 & & & &\\
+2 & & & &\\
+3 & & & &\\
+4 & & & &\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{verbatim}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{verbatim}
+\end{minipage}
+\end{figure}
+
+\begin{figure}
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l}
+Task\_4(tsqrt, A00, A10, T10)
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l  l l l }
+Dependency list & Task\_1 & \cellcolor{LimeGreen}$t\_1\_A00^{RW}$ & \cellcolor{LimeGreen}$t\_1\_T00^{W}$ &\\
+                & Task\_2 & \cellcolor{RedOrange}$t\_2\_A00^{R}$ & \cellcolor{RedOrange}$t\_2\_T00^{R}$ & \cellcolor{LimeGreen}$t\_2\_A01^{RW}$\\
+                & Task\_3 & \cellcolor{RedOrange}$t\_3\_A00^{R}$ & \cellcolor{RedOrange}$t\_3\_T00^{R}$ & \cellcolor{LimeGreen}$t\_3\_A02^{RW}$\\
+                & Task\_4 & \cellcolor{RedOrange}$t\_4\_A00^{RW}$ & \cellcolor{LimeGreen}$t\_4\_A10^{RW}$ & \cellcolor{LimeGreen}$t\_4\_T10^{W}$\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l}
+Task set hash\\
+\hline
+\cellcolor{LimeGreen}Task\_1\\
+\cellcolor{RedOrange}Task\_2\\
+\cellcolor{RedOrange}Task\_3\\
+\cellcolor{RedOrange}Task\_4\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l l l l}
+address set hash& Dependency waiting\\
+\hline
+&\\
+A00 & \cellcolor{LimeGreen}$t\_1\_A00^{RW}$ & \cellcolor{RedOrange}$t\_2\_A00^{R}$ & \cellcolor{RedOrange}$t\_3\_A00^{R}$ & \cellcolor{RedOrange} $t\_4\_A00^{RW}$\\
+T00 & \cellcolor{LimeGreen}$t\_1\_T00^{W}$ & \cellcolor{RedOrange}$t\_2\_T00^{R}$ & \cellcolor{RedOrange}$t\_3\_T00^{R}$&\\
+A01 & \cellcolor{LimeGreen}$t\_2\_A01^{RW}$&&&\\
+A02 & \cellcolor{LimeGreen}$t\_3\_A02^{RW}$&&&\\
+A10 & \cellcolor{LimeGreen}$t\_4\_A10^{RW}$&&&\\
+T10 & \cellcolor{LimeGreen}$t\_4\_T10^{W}$&&&\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l l l l}
+Core \# & Ready queue\\
+\hline
+&\\
+0 & & & &\\
+1 & & & &\\
+2 & & & &\\
+3 & & & &\\
+4 & & & &\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{verbatim}
+
+
+
+
+
+
+
+
+
+
+\end{verbatim}
+\end{minipage}
+
+\end{figure}
+
+
+
+\begin{figure}
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l}
+Task\_1 put into ready queue of core 1 for execution
+\end{tabular}
+\end{minipage}
+
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l  l l l }
+Dependency list & Task\_1 & \cellcolor{Gray}$t\_1\_A00^{RW}$ & \cellcolor{Gray}$t\_1\_T00^{W}$ &\\
+                & Task\_2 & \cellcolor{RedOrange}$t\_2\_A00^{R}$ & \cellcolor{RedOrange}$t\_2\_T00^{R}$ & \cellcolor{LimeGreen}$t\_2\_A01^{RW}$\\
+                & Task\_3 & \cellcolor{RedOrange}$t\_3\_A00^{R}$ & \cellcolor{RedOrange}$t\_3\_T00^{R}$ & \cellcolor{LimeGreen}$t\_3\_A02^{RW}$\\
+                & Task\_4 & \cellcolor{RedOrange}$t\_4\_A00^{RW}$ & \cellcolor{LimeGreen}$t\_4\_A10^{RW}$ & \cellcolor{LimeGreen}$t\_4\_T10^{W}$\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l}
+Task set hash\\
+\hline
+\cellcolor{Gray}Task\_1\\
+\cellcolor{RedOrange}Task\_2\\
+\cellcolor{RedOrange}Task\_3\\
+\cellcolor{RedOrange}Task\_4\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l l l l}
+address set hash& Dependency waiting\\
+\hline
+&\\
+A00 & \cellcolor{LimeGreen}$t\_1\_A00^{RW}$ & \cellcolor{RedOrange}$t\_2\_A00^{R}$ & \cellcolor{RedOrange}$t\_3\_A00^{R}$ & \cellcolor{RedOrange} $t\_4\_A00^{RW}$\\
+T00 & \cellcolor{LimeGreen}$t\_1\_T00^{W}$ & \cellcolor{RedOrange}$t\_2\_T00^{R}$ & \cellcolor{RedOrange}$t\_3\_T00^{R}$&\\
+A01 & \cellcolor{LimeGreen}$t\_2\_A01^{RW}$&&&\\
+A02 & \cellcolor{LimeGreen}$t\_3\_A02^{RW}$&&&\\
+A10 & \cellcolor{LimeGreen}$t\_4\_A10^{RW}$&&&\\
+T10 & \cellcolor{LimeGreen}$t\_4\_T10^{W}$&&&\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l l l l}
+Core \# & Ready queue\\
+\hline
+&\\
+0 & & & &\\
+1 & Task\_1 & & &\\
+2 & & & &\\
+3 & & & &\\
+4 & & & &\\
+\end{tabular}
+\end{minipage}
+
+
+\begin{minipage}{1.0\linewidth}
+\begin{verbatim}
+
+
+
+
+
+
+
+
+
+
+\end{verbatim}
+\end{minipage}
+
+\end{figure}
+
+
+\begin{figure}
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l}
+Task\_1 execution over by core \# 1
+\end{tabular}
+\end{minipage}
+
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l  l l l }
+Dependency list & Task\_2 & \cellcolor{LimeGreen}$t\_2\_A00^{R}$ & \cellcolor{LimeGreen}$t\_2\_T00^{R}$ & \cellcolor{LimeGreen}$t\_2\_A01^{RW}$\\
+                & Task\_3 & \cellcolor{LimeGreen}$t\_3\_A00^{R}$ & \cellcolor{LimeGreen}$t\_3\_T00^{R}$ & \cellcolor{LimeGreen}$t\_3\_A02^{RW}$\\
+                & Task\_4 & \cellcolor{RedOrange}$t\_4\_A00^{RW}$ & \cellcolor{LimeGreen}$t\_4\_A10^{RW}$ & \cellcolor{LimeGreen}$t\_4\_T10^{W}$\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l}
+Task set hash\\
+\hline
+\cellcolor{LimeGreen}Task\_2\\
+\cellcolor{LimeGreen}Task\_3\\
+\cellcolor{RedOrange}Task\_4\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l l l l}
+address set hash & Dependency waiting\\
+(latest used by core \#) & \\
+\hline
+&\\
+A00(1) & \cellcolor{LimeGreen}$t\_2\_A00^{R}$ & \cellcolor{LimeGreen}$t\_3\_A00^{R}$ & \cellcolor{RedOrange} $t\_4\_A00^{RW}$&\\
+T00(1) & \cellcolor{LimeGreen}$t\_2\_T00^{R}$ & \cellcolor{LimeGreen}$t\_3\_T00^{R}$&&\\
+A01 & \cellcolor{LimeGreen}$t\_2\_A01^{RW}$&&&\\
+A02 & \cellcolor{LimeGreen}$t\_3\_A02^{RW}$&&&\\
+A10 & \cellcolor{LimeGreen}$t\_4\_A10^{RW}$&&&\\
+T10 & \cellcolor{LimeGreen}$t\_4\_T10^{W}$&&&\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l l l l}
+Core \# & Ready queue\\
+\hline
+&\\
+0 & & & &\\
+1 & & & &\\
+2 & & & &\\
+3 & & & &\\
+4 & & & &\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{verbatim}
+
+
+
+
+
+
+
+
+
+
+
+\end{verbatim}
+\end{minipage}
+
+\end{figure}
+
+
+
+
+
+
+\begin{figure}
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l}
+Placing Task\_2 and Task\_3 in the ready queue
+\end{tabular}
+\end{minipage}
+
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l  l l l }
+Dependency list & Task\_2 & \cellcolor{Gray}$t\_2\_A00^{R}$ & \cellcolor{Gray}$t\_2\_T00^{R}$ & \cellcolor{Gray}$t\_2\_A01^{RW}$\\
+                & Task\_3 & \cellcolor{Gray}$t\_3\_A00^{R}$ & \cellcolor{Gray}$t\_3\_T00^{R}$ & \cellcolor{Gray}$t\_3\_A02^{RW}$\\
+                & Task\_4 & \cellcolor{RedOrange}$t\_4\_A00^{RW}$ & \cellcolor{LimeGreen}$t\_4\_A10^{RW}$ & \cellcolor{LimeGreen}$t\_4\_T10^{W}$\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l}
+Task set hash\\
+\hline
+\cellcolor{Gray}Task\_2\\
+\cellcolor{Gray}Task\_3\\
+\cellcolor{RedOrange}Task\_4\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l l l l}
+address set hash & Dependency waiting\\
+(latest used by core \#) & \\
+\hline
+&\\
+A00(1) & \cellcolor{LimeGreen}$t\_2\_A00^{R}$ & \cellcolor{LimeGreen}$t\_3\_A00^{R}$ & \cellcolor{RedOrange} $t\_4\_A00^{RW}$&\\
+T00(1) & \cellcolor{LimeGreen}$t\_2\_T00^{R}$ & \cellcolor{LimeGreen}$t\_3\_T00^{R}$&&\\
+A01 & \cellcolor{LimeGreen}$t\_2\_A01^{RW}$&&&\\
+A02 & \cellcolor{LimeGreen}$t\_3\_A02^{RW}$&&&\\
+A10 & \cellcolor{LimeGreen}$t\_4\_A10^{RW}$&&&\\
+T10 & \cellcolor{LimeGreen}$t\_4\_T10^{W}$&&&\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l l l l}
+Core \# & Ready queue\\
+\hline
+&\\
+0 & & & &\\
+1 & Task\_2 & Task\_3 & &\\
+2 & & & &\\
+3 & & & &\\
+4 & & & &\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+Description
+
+If we assume locality preserving dependency is A00 tile for Task\_2 and Task\_3 then both tasks will be placed on core \# 1 as A00 tile was previously used by core \# 1 hence there is more chance of finding data in the cache of core \#1 hence preserving data locality.
+
+\begin{verbatim}
+
+
+
+
+
+
+\end{verbatim}
+\end{minipage}
+
+\end{figure}
+
+
+\begin{figure}
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l}
+Work stealing for Task\_3.
+\end{tabular}
+\end{minipage}
+
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l  l l l }
+Dependency list & Task\_2 & \cellcolor{Gray}$t\_2\_A00^{R}$ & \cellcolor{Gray}$t\_2\_T00^{R}$ & \cellcolor{Gray}$t\_2\_A01^{RW}$\\
+                & Task\_3 & \cellcolor{Gray}$t\_3\_A00^{R}$ & \cellcolor{Gray}$t\_3\_T00^{R}$ & \cellcolor{Gray}$t\_3\_A02^{RW}$\\
+                & Task\_4 & \cellcolor{RedOrange}$t\_4\_A00^{RW}$ & \cellcolor{LimeGreen}$t\_4\_A10^{RW}$ & \cellcolor{LimeGreen}$t\_4\_T10^{W}$\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l}
+Task set hash\\
+\hline
+\cellcolor{Gray}Task\_2\\
+\cellcolor{Gray}Task\_3\\
+\cellcolor{RedOrange}Task\_4\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l l l l}
+address set hash & Dependency waiting\\
+(latest used by core \#) & \\
+\hline
+&\\
+A00(1) & \cellcolor{LimeGreen}$t\_2\_A00^{R}$ & \cellcolor{LimeGreen}$t\_3\_A00^{R}$ & \cellcolor{RedOrange} $t\_4\_A00^{RW}$&\\
+T00(1) & \cellcolor{LimeGreen}$t\_2\_T00^{R}$ & \cellcolor{LimeGreen}$t\_3\_T00^{R}$&&\\
+A01 & \cellcolor{LimeGreen}$t\_2\_A01^{RW}$&&&\\
+A02 & \cellcolor{LimeGreen}$t\_3\_A02^{RW}$&&&\\
+A10 & \cellcolor{LimeGreen}$t\_4\_A10^{RW}$&&&\\
+T10 & \cellcolor{LimeGreen}$t\_4\_T10^{W}$&&&\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l l l l}
+Core \# & Ready queue\\
+\hline
+&\\
+0 & & & &\\
+1 & Task\_2 & & &\\
+2 & Task\_3 & & &\\
+3 & & & &\\
+4 & & & &\\
+\end{tabular}
+\end{minipage}
+
+
+\begin{minipage}{1.0\linewidth}
+Description
+
+In previous step both Task\_2 and Task\_3 were placed on core \# 1. Core \# 1 starts executing Task\_2. Task\_3 is present in the ready queue of core \# 1. As other cores are idle and not having any task to execute, one of the core    say core \# 2 will steal Task\_3 from core \# 1 as it is busy executing Task\_2.
+
+\begin{verbatim}
+
+
+
+
+
+
+\end{verbatim}
+\end{minipage}
+
+\end{figure}
+
+
+
+
+
+
+
+
+
+
+
+
+\begin{figure}
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l}
+Execution of Task\_2 by core \# 1 over.
+\end{tabular}
+\end{minipage}
+
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l  l l l }
+Dependency list & Task\_3 & \cellcolor{Gray}$t\_3\_A00^{R}$ & \cellcolor{Gray}$t\_3\_T00^{R}$ & \cellcolor{Gray}$t\_3\_A02^{RW}$\\
+                & Task\_4 & \cellcolor{RedOrange}$t\_4\_A00^{RW}$ & \cellcolor{LimeGreen}$t\_4\_A10^{RW}$ & \cellcolor{LimeGreen}$t\_4\_T10^{W}$\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l}
+Task set hash\\
+\hline
+\cellcolor{Gray}Task\_3\\
+\cellcolor{RedOrange}Task\_4\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l l l l}
+address set hash & Dependency waiting\\
+(latest used by core \#) & \\
+\hline
+&\\
+A00(1) & \cellcolor{LimeGreen}$t\_3\_A00^{R}$ & \cellcolor{RedOrange} $t\_4\_A00^{RW}$&&\\
+T00(1) & \cellcolor{LimeGreen}$t\_3\_T00^{R}$&&&\\
+A01(1) &                                        &&&\\
+A02 & \cellcolor{LimeGreen}$t\_3\_A02^{RW}$&&&\\
+A10 & \cellcolor{LimeGreen}$t\_4\_A10^{RW}$&&&\\
+T10 & \cellcolor{LimeGreen}$t\_4\_T10^{W}$&&&\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l l l l}
+Core \# & Ready queue\\
+\hline
+&\\
+0 & & & &\\
+1 & & & &\\
+2 & Task\_3 & & &\\
+3 & & & &\\
+4 & & & &\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{verbatim}
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{verbatim}
+\end{minipage}
+
+
+\end{figure}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\begin{figure}
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l}
+Execution of Task\_3 by core \# 2 over.
+\end{tabular}
+\end{minipage}
+
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l  l l l }
+Dependency list & Task\_4 & \cellcolor{LimeGreen}$t\_4\_A00^{RW}$ & \cellcolor{LimeGreen}$t\_4\_A10^{RW}$ & \cellcolor{LimeGreen}$t\_4\_T10^{W}$\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l}
+Task set hash\\
+\hline
+\cellcolor{LimeGreen}Task\_4\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l l l l}
+address set hash & Dependency waiting\\
+(latest used by core \#) & \\
+\hline
+&\\
+A00(2) & \cellcolor{LimeGreen} $t\_4\_A00^{RW}$&&&\\
+T00(2) &                                       &&&\\
+A01(1) &                                       &&&\\
+A02(2) &                                       &&&\\
+A10 & \cellcolor{LimeGreen}$t\_4\_A10^{RW}$    &&&\\
+T10 & \cellcolor{LimeGreen}$t\_4\_T10^{W}$     &&&\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{tabular}{l | l l l l}
+Core \# & Ready queue\\
+\hline
+&\\
+0 & & & &\\
+1 & & & &\\
+2 & & & &\\
+3 & & & &\\
+4 & & & &\\
+\end{tabular}
+\end{minipage}
+
+\begin{minipage}{1.0\linewidth}
+\begin{verbatim}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{verbatim}
+\end{minipage}
+\end{figure}
+
+
+%\section{Bibliography}
+%\bibliographystyle{unsrt}
+%\bibliographystyle{{report}
+\end{document}

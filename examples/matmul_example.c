@@ -25,7 +25,6 @@
 #include <assert.h>
 #include <math.h>
 #include <sys/time.h>
-#include <string.h>
 
 #include "quark.h"
 
@@ -234,7 +233,7 @@ int main_algorithm(int NB, int N, int THREADS)
     printf("\n");    
 
     printf("Summary of time taken\n");
-    printf("%-12s %-12s %-12s (%d threads)\n", "BigLoops", "SerialBlocks", "QUARKBlocks", THREADS);
+    printf("Direct       SerialBlock  QUARK(%d threads)\n", THREADS);
     printf("%-12.5f %-12.5f %-12.5f\n", t_direct, t_blk, t_quark);
     
     free(A); free(Ablk); free(B); free(Bblk); free(C); free(Cblk); free(C_direct); free(C_quark); free(C_quark_blk);
@@ -244,20 +243,15 @@ int main_algorithm(int NB, int N, int THREADS)
 /* Grab command line args and launch the matmul tests */
 int main (int argc, char **argv)
 {
-    int NB, N, THREADS;
     if (argc != 4) {
         printf( "Usage: %s NB N THREADS\n", argv[0] );
+        printf( "Example: %s 200 2000 4\n", argv[0] );
         printf( "Usage: Note: N / NB must be an integer\n" );
-        printf( "Usage: Assuming a simple test run, with the following parameters\n" );
-        printf( "%s 200 800 2\n", argv[0] );
-        NB = 200;
-        N = 800;
-        THREADS = 2;
-    } else {
-        NB = atoi(argv[1]); 
-        N = atoi(argv[2]);
-        THREADS = atoi(argv[3]); 
+        return(0);
     }
+    int NB = atoi(argv[1]); 
+    int N = atoi(argv[2]);
+    int THREADS = atoi(argv[3]); 
     assert( N % NB == 0 );
     main_algorithm(NB, N, THREADS);
 }

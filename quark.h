@@ -7,7 +7,7 @@
  * PLASMA is a software package provided by Univ. of Tennessee,
  * Univ. of California Berkeley and Univ. of Colorado Denver
  *
- * @version 2.4.5
+ * @version 2.8.0
  * @author Asim YarKhan
  * @date 2010-11-15
  *
@@ -97,6 +97,9 @@ typedef enum { QINPUT=0x100, OUTPUT=0x200, INOUT=0x300, VALUE=0x400, NODEP=0x500
 #define THREAD_SET_TO_MANUAL_SCHEDULING ( 1 << 21 )
 /* Lock the task to a thead mask (0 ... NTHREADS-1) bits long, provided as a character array (byte array) */
 #define TASK_LOCK_TO_THREAD_MASK ( 1 << 22 )
+/* The start/stop event code to overwrite quark events types for tracing */
+#define TASK_START_CODE ( 1 << 23 )
+#define TASK_STOP_CODE  ( 1 << 24 )
 
 /* The range for priority values */
 #define QUARK_TASK_MIN_PRIORITY 0
@@ -115,6 +118,7 @@ struct quark_task_flags_s {
     char *task_color;
     char *task_label;
     void *task_sequence;
+    int start_code, stop_code;
     int task_thread_count;
     int thread_set_to_manual_scheduling;
     unsigned char *task_lock_to_thread_mask;
@@ -122,7 +126,7 @@ struct quark_task_flags_s {
 
 typedef struct quark_task_flags_s Quark_Task_Flags;
 /* Static initializer for Quark_Task_Flags_t */
-#define Quark_Task_Flags_Initializer { (int)0, (int)-1, (char *)NULL, (char *)NULL, (void *)NULL, (int)1, (int)-1, (unsigned char *)NULL }
+#define Quark_Task_Flags_Initializer { (int)0, (int)-1, (char *)NULL, (char *)NULL, (void *)NULL, (int)0, (int)0, (int)1, (int)-1, (unsigned char *)NULL }
 
 /* Setup scheduler data structures, assumes threads are managed seperately */
 Quark *QUARK_Setup(int num_threads);
@@ -183,7 +187,10 @@ void QUARK_Task_Pack_Arg( Quark *quark, Quark_Task *task, int arg_size, void *ar
 unsigned long long QUARK_Insert_Task_Packed(Quark * quark, Quark_Task *task );
 
 /* Unsupported function for debugging purposes; execute task AT ONCE */
-unsigned long long QUARK_Execute_Task(Quark * quark, void (*function) (Quark *), Quark_Task_Flags *task_flags, ...);
+unsigned long long QUARK_Execute_Task_Packed( Quark *quark, Quark_Task *task );
+
+/* Unsupported function for debugging purposes; execute task AT ONCE */
+unsigned long long QUARK_Execute_Task( Quark *quark, void (*function) (Quark *), Quark_Task_Flags *task_flags, ...);
 
 /* Get the label (if any) associated with the current task; used for printing and debugging  */
 char *QUARK_Get_Task_Label(Quark *quark);
@@ -217,8 +224,6 @@ int QUARK_Get_Priority(Quark *quark);
  * executing task */
 intptr_t QUARK_Task_Flag_Get( Quark *quark, int flag );
 
-int quark_get_numthreads();
-
 /* Enable and disable DAG generation via API.  Only makes sense after
  * a sync, such as QUARK_Barrier. */
 void QUARK_DOT_DAG_Enable( Quark *quark, int boolean_value );
@@ -243,10 +248,22 @@ static inline void QUARK_Bit_Set(unsigned char *set, int number, int value)
 {
     set += number / 8;
     if (value)
-        *set |= 1 << (7-(number % 8)); /* set bit      */
-    else    *set &= ~(1 << (7-(number % 8))); /* clear bit    */
-
+        *set =  (unsigned char)(*set | (1 << (7-(number % 8)))); /* set bit      */
+    else    *set = (unsigned char)(*set & ( ~(1 << (7-(number % 8))))); /* clear bit    */
 }
+
+/* The following are QUARK internal functions, and will be moved to a
+ * separate header file in the future.  Please do not use these
+ * functions outside of the QUARK source code.  */
+void quark_warning(const char *func_name, char* msg_text);
+void quark_topology_init();
+void quark_topology_finalize();
+int quark_setaffinity(int rank);
+int quark_unsetaffinity();
+int quark_yield();
+int quark_get_numthreads();
+int *quark_get_affthreads();
+int quark_getenv_int(char* name, int defval);
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }
