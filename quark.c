@@ -185,7 +185,7 @@ typedef struct dependency_s {
     struct quark_task_s *task; /* pointer to parent task containing this dependency */
     void *address;              /* address of data */
     int size;                   /* Size of dependency data */
-    quark_direction_t direction; /* direction of this dependency, INPUT, INOUT, OUTPUT */
+    quark_direction_t direction; /* direction of this dependency, QUARK_INPUT, QUARK_INOUT, QUARK_OUTPUT */
     bool locality; /* Priority of this dependency; more like data locality */
     bool accumulator; /* Tasks depending on this may be reordered, they accumulate results */
     int data_region; /* Different regions may be specified for dependencies; uses bitmask of 8 bits */
@@ -686,7 +686,7 @@ static inline Dependency *dependency_new(void *addr, long long size, quark_direc
      * preservation; by default, use first output dependency.  */
     if ( dep->locality )
         task->locality_preserving_dep = dep;
-    else if ( (task->locality_preserving_dep == NULL) && ( dep->direction==OUTPUT || dep->direction==INOUT) )
+    else if ( (task->locality_preserving_dep == NULL) && ( dep->direction==QUARK_OUTPUT || dep->direction==QUARK_INOUT) )
         task->locality_preserving_dep = dep;
     return dep;
 }
@@ -1084,11 +1084,11 @@ Task *QUARK_Task_Init(Quark * quark, void (*function) (Quark *), Quark_Task_Flag
  *          Pointer to data or argument
  * @param[in] arg_flags
  *          Flags indicating argument usage and various decorators
- *          INPUT, OUTPUT, INOUT, VALUE, NODEP, SCRATCH
+ *          QUARK_INPUT, QUARK_OUTPUT, QUARK_INOUT, QUARK_VALUE, NODEP, QUARK_SCRATCH
  *          LOCALITY, ACCUMULATOR, GATHERV
- *          TASK_COLOR, TASK_LABEL (special decorators for VALUE)
- *          e.g., arg_flags    INPUT | LOCALITY | ACCUMULATOR
- *          e.g., arg_flags    VALUE | TASK_COLOR
+ *          TASK_COLOR, TASK_LABEL (special decorators for QUARK_VALUE)
+ *          e.g., arg_flags    QUARK_INPUT | LOCALITY | ACCUMULATOR
+ *          e.g., arg_flags    QUARK_VALUE | TASK_COLOR
  * @ingroup QUARK
  */
 void QUARK_Task_Pack_Arg( Quark *quark, Task *task, int arg_size, void *arg_ptr, int arg_flags )
@@ -1101,9 +1101,9 @@ void QUARK_Task_Pack_Arg( Quark *quark, Task *task, int arg_size, void *arg_ptr,
     // extract information from the flags
     quark_direction_t arg_direction = (quark_direction_t) (arg_flags & QUARK_DIRECTION_BITMASK);
     switch ( arg_direction ) {
-    case VALUE:
+    case QUARK_VALUE:
         /* If argument is a value; Copy the contents to the argument buffer */
-        value_mask = ( arg_flags & QUARK_VALUE_FLAGS_BITMASK );
+        value_mask = ( arg_flags & QUARK_QUARK_VALUE_FLAGS_BITMASK );
         if ( value_mask==0 ) {
             icl_list_append(task->args_list, arg_dup(arg_ptr, arg_size));
         } else if ( (arg_flags & TASK_PRIORITY) != 0 ) {
@@ -1129,14 +1129,14 @@ void QUARK_Task_Pack_Arg( Quark *quark, Task *task, int arg_size, void *arg_ptr,
     case NODEP:
         icl_list_append(task->args_list, arg_dup((char *) &arg_ptr, sizeof(char *)));
         break;
-    case SCRATCH:
+    case QUARK_SCRATCH:
         task_args_list_node_ptr = icl_list_append(task->args_list, arg_dup((char *) &arg_ptr, sizeof(char *)));
         scratcharg = quark_scratch_new( arg_ptr, arg_size, task_args_list_node_ptr);
         icl_list_append( task->scratch_list, scratcharg );
         break;
-    case INPUT:
-    case OUTPUT:
-    case INOUT:
+    case QUARK_INPUT:
+    case QUARK_OUTPUT:
+    case QUARK_INOUT:
     default:
         task_args_list_node_ptr = icl_list_append(task->args_list, arg_dup((char *) &arg_ptr, sizeof(char *)));
         arg_locality = (bool) ((arg_flags & LOCALITY) != 0 );
@@ -1259,11 +1259,11 @@ unsigned long long QUARK_Insert_Task_Packed(Quark * quark, Task *task )
  *          arg_size: int: Size of the argument in bytes (0 cannot be used here)
  *          arg_ptr: pointer: Pointer to data or argument
  *          arg_flags: int: Flags indicating argument usage and various decorators
- *            INPUT, OUTPUT, INOUT, VALUE, NODEP, SCRATCH
+ *            QUARK_INPUT, QUARK_OUTPUT, QUARK_INOUT, QUARK_VALUE, NODEP, QUARK_SCRATCH
  *            LOCALITY, ACCUMULATOR, GATHERV
- *            TASK_COLOR, TASK_LABEL (special decorators for VALUE)
- *            e.g., arg_flags    INPUT | LOCALITY | ACCUMULATOR
- *            e.g., arg_flags    VALUE | TASK_COLOR
+ *            TASK_COLOR, TASK_LABEL (special decorators for QUARK_VALUE)
+ *            e.g., arg_flags    QUARK_INPUT | LOCALITY | ACCUMULATOR
+ *            e.g., arg_flags    QUARK_VALUE | TASK_COLOR
  * @return
  *          A long, long integer which can be used to refer to
  *          this task (e.g. for cancellation)
@@ -1350,11 +1350,11 @@ unsigned long long QUARK_Execute_Task_Packed( Quark * quark, Quark_Task *task )
  *          arg_size: int: Size of the argument in bytes (0 cannot be used here)
  *          arg_ptr: pointer: Pointer to data or argument
  *          arg_flags: int: Flags indicating argument usage and various decorators
- *            INPUT, OUTPUT, INOUT, VALUE, NODEP, SCRATCH
+ *            QUARK_INPUT, QUARK_OUTPUT, QUARK_INOUT, QUARK_VALUE, NODEP, QUARK_SCRATCH
  *            LOCALITY, ACCUMULATOR, GATHERV
- *            TASK_COLOR, TASK_LABEL (special decorators for VALUE)
- *            e.g., arg_flags    INPUT | LOCALITY | ACCUMULATOR
- *            e.g., arg_flags    VALUE | TASK_COLOR
+ *            TASK_COLOR, TASK_LABEL (special decorators for QUARK_VALUE)
+ *            e.g., arg_flags    QUARK_INPUT | LOCALITY | ACCUMULATOR
+ *            e.g., arg_flags    QUARK_VALUE | TASK_COLOR
  * @return
  *           Error value 0 since the task is run at once and there is no need for a task handle.
  * @ingroup QUARK_Unsupported
@@ -1590,9 +1590,9 @@ static void quark_check_and_queue_ready_task( Quark *quark, Task *task, int work
 /* **************************************************************************** */
 /**
  * Routine to avoid false (WAR write-after-read) dependencies by
- * making copies of the data.  Check if there are suffient INPUTS in
- * the beginning of a address dependency followed by a OUTPUT or an
- * INOUT (data<-RRRRW).  If so, make a copy of the data, adjust the
+ * making copies of the data.  Check if there are suffient QUARK_INPUTS in
+ * the beginning of a address dependency followed by a QUARK_OUTPUT or an
+ * QUARK_INOUT (data<-RRRRW).  If so, make a copy of the data, adjust the
  * pointers of the read dependencies to point to the new copy
  * (copy<-RRRR and data<-W) and send to workers if the tasks are
  * ready.  The copy can be automacally freed when all the reads are
@@ -1634,9 +1634,9 @@ static void quark_avoid_war_dependencies( Quark *quark, Address_Set_Node *asn_ol
          dep_node_old=icl_list_next(asn_old->waiting_deps, dep_node_old)) {
         Dependency *dep = (Dependency *)dep_node_old->data;
         Task *task = dep->task;
-        if ( dep->direction==INPUT && task->status==NOTREADY  ) {
+        if ( dep->direction==QUARK_INPUT && task->status==NOTREADY  ) {
             count_initial_input_deps++;
-        } else if ( (dep->direction==OUTPUT || dep->direction==INOUT) && task->status!=DONE ) {
+        } else if ( (dep->direction==QUARK_OUTPUT || dep->direction==QUARK_INOUT) && task->status!=DONE ) {
             output_dep_reached = TRUE;
             break;
         }
@@ -1662,7 +1662,7 @@ static void quark_avoid_war_dependencies( Quark *quark, Address_Set_Node *asn_ol
             icl_list_t *dep_node_asn_old_to_be_deleted = NULL;
             Dependency *dep = (Dependency *)dep_node_asn_old->data;
             Task *task = dep->task;
-            if ( dep->direction==INPUT && task->status==NOTREADY ) {
+            if ( dep->direction==QUARK_INPUT && task->status==NOTREADY ) {
                 dep_node_asn_old_to_be_deleted = dep_node_asn_old;
                 icl_list_t *dep_node_new = icl_list_append( asn_new->waiting_deps, dep );
                 /* In the args list, set the arg pointer to the new datacopy address */
@@ -1678,7 +1678,7 @@ static void quark_avoid_war_dependencies( Quark *quark, Address_Set_Node *asn_ol
                     quark_check_and_queue_ready_task( quark, task, -1 );
                     pthread_mutex_unlock_task( &task->task_mutex );
                 }
-            } else if ( (dep->direction==OUTPUT || dep->direction==INOUT) && task->status!=DONE ) {
+            } else if ( (dep->direction==QUARK_OUTPUT || dep->direction==QUARK_INOUT) && task->status!=DONE ) {
                 /* Once we return from this routine, this dep dependency will be processed */
                 break;
             }
@@ -1710,7 +1710,7 @@ static void quark_address_set_node_initial_gatherv_check_and_launch(Quark *quark
         Dependency *next_dep = (Dependency *)next_dep_node->data;
         /* Break when we run out of GATHERV output dependencies */
         if ( next_dep->gatherv==FALSE ) break;
-        if ( next_dep->direction!=OUTPUT && next_dep->direction!=INOUT ) break;
+        if ( next_dep->direction!=QUARK_OUTPUT && next_dep->direction!=QUARK_INOUT ) break;
         if ( next_dep->data_region != completed_dep->data_region ) break;
         Task *next_task = next_dep->task;
         /* Update next_dep ready status */
@@ -1855,7 +1855,7 @@ static void quark_insert_task_dependencies(Quark * quark, Task * task)
             /* Convenience shortcut pointer so we don't have to scan the waiting dependencies */
             dep->address_set_waiting_deps_node_ptr = curr_dep_node;
             /* Handle the case that the a single task makes multiple dependencies on the same data address */
-            /* e.g. func( A11:IN, A11:INOUT, A11:OUT, A11:IN, A22:OUT )  */
+            /* e.g. func( A11:IN, A11:QUARK_INOUT, A11:OUT, A11:IN, A22:OUT )  */
             icl_list_t *prev_dep_node = icl_list_prev( address_set_node->waiting_deps, curr_dep_node);
             if ( prev_dep_node != NULL ) {
                 Dependency *prev_dep = (Dependency *)prev_dep_node->data;
@@ -1863,7 +1863,7 @@ static void quark_insert_task_dependencies(Quark * quark, Task * task)
                 if ( prev_task->taskid == task->taskid ) {
                     pthread_mutex_lock_task( &task->task_mutex );
                     DBGPRINTF( "task t%lld [label=\"%s %lld\" multiple dependencies on address %p];\n", task->taskid, task->task_label, task->taskid, dep->address );
-                    /* The curr dependency will updated using the ordering INPUT < OUTPUT < INOUT  */
+                    /* The curr dependency will updated using the ordering QUARK_INPUT < QUARK_OUTPUT < QUARK_INOUT  */
                     /* When the scheduler checks the front of the dependency list, it will find the correct dep setting */
                     dep->direction = (dep->direction > prev_dep->direction ? dep->direction : prev_dep->direction );
                     dep->data_region = (dep->data_region | prev_dep->data_region );
@@ -1883,12 +1883,12 @@ static void quark_insert_task_dependencies(Quark * quark, Task * task)
             /* This will avoid WAR dependencies if possible: if enabled, and
              * the current dependency is a write, and there were only reads
              * earlier (input>1, output+inout=1) */
-            if ( dep->direction==OUTPUT || dep->direction==INOUT ) {
+            if ( dep->direction==QUARK_OUTPUT || dep->direction==QUARK_INOUT ) {
                 quark_avoid_war_dependencies( quark, address_set_node, task );
             }
 
             /* The following code decides whether the dep is ready or not */
-            if ( dep->direction==INOUT || dep->direction==OUTPUT ) {
+            if ( dep->direction==QUARK_INOUT || dep->direction==QUARK_OUTPUT ) {
                 /* If output, and previous dep exists, then ready=false */
                 if ( prev_dep_node != NULL ) {
                     dep->ready = FALSE;
@@ -1897,7 +1897,7 @@ static void quark_insert_task_dependencies(Quark * quark, Task * task)
                     dot_dag_print_edge( quark, address_set_node->last_writer_taskid, address_set_node->last_writer_tasklevel, task->taskid, task->tasklevel, DEPCOLOR_W_FIRST );
                     quark_atomic_add( task->num_dependencies_remaining, -1, &task->task_mutex );
                 }
-            } else if ( dep->direction == INPUT ) {
+            } else if ( dep->direction == QUARK_INPUT ) {
                 if ( prev_dep_node != NULL ) {
                     /* If input, and previous dep exists, then ready=false.  (Note: before regions were introduced, looking at the prevous dependency would have been enough to make a determination of readiness.  With regions, when the earlier task working on this data completes,  the waiting dependencies are scanned for whether regions conflict. )*/
                     dep->ready = FALSE;
@@ -2385,7 +2385,7 @@ static void quark_address_set_node_initial_check_and_launch( Quark *quark, Addre
         /* NOTE Skip CANCELLED and DONE tasks */
         if ( task->status==CANCELLED || task->status==DONE ) continue;
         switch ( dep->direction ) {
-        case INPUT:
+        case QUARK_INPUT:
             if ( (dep->data_region & write_data_region) == 0 ) {
                 if ( dep->ready==FALSE ) {
                     dep->ready = TRUE;
@@ -2398,8 +2398,8 @@ static void quark_address_set_node_initial_check_and_launch( Quark *quark, Addre
             }
             read_data_region = read_data_region | dep->data_region;
             break;
-        case OUTPUT:
-        case INOUT:
+        case QUARK_OUTPUT:
+        case QUARK_INOUT:
             if ( ((dep->data_region & write_data_region)==0) && ((dep->data_region & read_data_region)==0) ) {
                 if ( dep->ready==FALSE ) {
                     dep->ready = TRUE;
@@ -2408,7 +2408,7 @@ static void quark_address_set_node_initial_check_and_launch( Quark *quark, Addre
                     quark_check_and_queue_ready_task( quark, task, worker_rank );
                     pthread_mutex_unlock_task( &task->task_mutex );
                     if ( quark->dot_dag_enable ) {
-                        if ( completed_dep->direction==INPUT ) {
+                        if ( completed_dep->direction==QUARK_INPUT ) {
                             dot_dag_print_edge( quark, completed_dep->task->taskid, completed_dep->task->tasklevel, task->taskid, task->tasklevel, DEPCOLOR_WAR );
                         } else {
                             dot_dag_print_edge( quark, completed_dep->task->taskid, completed_dep->task->tasklevel, task->taskid, task->tasklevel, DEPCOLOR_WAW );
@@ -2420,11 +2420,11 @@ static void quark_address_set_node_initial_check_and_launch( Quark *quark, Addre
             if ( write_data_region==QUARK_REGION_ALL )
                 keep_processing_more_nodes = 0;
             break;
-        case VALUE:
+        case QUARK_VALUE:
         case NODEP:
-        case SCRATCH:
+        case QUARK_SCRATCH:
         default:
-            DBGPRINTF("Unexpected dependency direction (not INPUT, OUTPUT, INOUT)\n");
+            DBGPRINTF("Unexpected dependency direction (not QUARK_INPUT, QUARK_OUTPUT, QUARK_INOUT)\n");
             break;
         }
     }
@@ -2459,11 +2459,11 @@ static void quark_remove_completed_task_and_check_for_ready(Quark *quark, Task *
 
         if ( pthread_mutex_lock_wrap( &address_set_node->asn_mutex )==0 ) {
             /* Mark the address/data as having been written by worker_rank  */
-            if ( dep->direction==OUTPUT || dep->direction==INOUT )
+            if ( dep->direction==QUARK_OUTPUT || dep->direction==QUARK_INOUT )
                 address_set_node->last_thread = worker_rank;
             /* Update dag generation information */
             if ( quark->dot_dag_enable ) {
-                if ( dep->direction==OUTPUT || dep->direction==INOUT ) {
+                if ( dep->direction==QUARK_OUTPUT || dep->direction==QUARK_INOUT ) {
                     /* Track last writer and level, needed when this structure becomes empty */
                     address_set_node->last_writer_taskid = task->taskid;
                     address_set_node->last_writer_tasklevel = task->tasklevel;
@@ -2473,7 +2473,7 @@ static void quark_remove_completed_task_and_check_for_ready(Quark *quark, Task *
             }
             /* Check the address set node to avoid WAR dependencies */
             if ( (quark->war_dependencies_enable) &&
-                 (dep->direction==OUTPUT || dep->direction==INOUT) )
+                 (dep->direction==QUARK_OUTPUT || dep->direction==QUARK_INOUT) )
                 quark_avoid_war_dependencies( quark, address_set_node, task );
             /* Remove competed dependencies from address_set_node waiting_deps list */
             icl_list_delete( address_set_node->waiting_deps, dep->address_set_waiting_deps_node_ptr, NULL );

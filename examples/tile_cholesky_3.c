@@ -186,24 +186,24 @@ int main (int argc, char **argv)
             snprintf( tasklabel, 200, "SSYRK");
             snprintf( taskcolor, 200, SSYRK_COLOR);
             QUARK_Insert_Task(quark,SCHED_tile_ssyrk, 0, 
-                               sizeof(int),          &NB,                     VALUE,
-                               sizeof(float)*NB*NB,  (float*)(a[step][n]),    INPUT,
-                               sizeof(float)*NB*NB,  (float*)(a[step][step]), INOUT,
-                               sizeof(int),          &step,                   VALUE,
-                               strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
-                               strlen(taskcolor)+1,  taskcolor,  VALUE | TASKCOLOR,
+                               sizeof(int),          &NB,                     QUARK_VALUE,
+                               sizeof(float)*NB*NB,  (float*)(a[step][n]),    QUARK_INPUT,
+                               sizeof(float)*NB*NB,  (float*)(a[step][step]), QUARK_INOUT,
+                               sizeof(int),          &step,                   QUARK_VALUE,
+                               strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
+                               strlen(taskcolor)+1,  taskcolor,  QUARK_VALUE | TASKCOLOR,
                                0);
         }
         //tile_spotrf((float*)(a[step][step]), BSIZE);
         snprintf( tasklabel, 200, "SPOTRF");
         snprintf( taskcolor, 200, SPOTRF_COLOR);
         QUARK_Insert_Task(quark,SCHED_tile_spotrf, 0, 
-                           sizeof(int),             &NB,                      VALUE,
-                           sizeof(float)*NB*NB,     (float*)(a[step][step]),   INOUT | LOCALITY,
-                           sizeof(int),              &INFO,                    INOUT,
-                           sizeof(int),             &step,                     VALUE,
-                           strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
-                           strlen(taskcolor)+1,  taskcolor,  VALUE | TASKCOLOR,
+                           sizeof(int),             &NB,                      QUARK_VALUE,
+                           sizeof(float)*NB*NB,     (float*)(a[step][step]),   QUARK_INOUT | LOCALITY,
+                           sizeof(int),              &INFO,                    QUARK_INOUT,
+                           sizeof(int),             &step,                     QUARK_VALUE,
+                           strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
+                           strlen(taskcolor)+1,  taskcolor,  QUARK_VALUE | TASKCOLOR,
                            0);
 
         for (m = step+1; m < BB; m++)
@@ -213,13 +213,13 @@ int main (int argc, char **argv)
                 snprintf( tasklabel, 200, "SGEMM");
                 snprintf( taskcolor, 200, SGEMM_COLOR);
                 QUARK_Insert_Task(quark,SCHED_tile_sgemm, 0,
-                                   sizeof(int),          &NB,                     VALUE,
-                                   sizeof(float)*NB*NB,  (float*)(a[step][n]),    INPUT,
-                                   sizeof(float)*NB*NB,  (float*)(a[m][n]),       INPUT,
-                                   sizeof(float)*NB*NB,  (float*)(a[m][step]),    INOUT,
-                                   sizeof(int),          &step,                   VALUE,
-                                   strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
-                                   strlen(taskcolor)+1,  taskcolor,  VALUE | TASKCOLOR,
+                                   sizeof(int),          &NB,                     QUARK_VALUE,
+                                   sizeof(float)*NB*NB,  (float*)(a[step][n]),    QUARK_INPUT,
+                                   sizeof(float)*NB*NB,  (float*)(a[m][n]),       QUARK_INPUT,
+                                   sizeof(float)*NB*NB,  (float*)(a[m][step]),    QUARK_INOUT,
+                                   sizeof(int),          &step,                   QUARK_VALUE,
+                                   strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
+                                   strlen(taskcolor)+1,  taskcolor,  QUARK_VALUE | TASKCOLOR,
                                    0);
             }
 
@@ -227,12 +227,12 @@ int main (int argc, char **argv)
             snprintf( tasklabel, 200, "STRSM");
             snprintf( taskcolor, 200, STRSM_COLOR);
             QUARK_Insert_Task(quark,SCHED_tile_strsm, 0, 
-                               sizeof(int),          &NB,                     VALUE,
-                               sizeof(float)*NB*NB,  (float*)(a[step][step]), INPUT,
-                               sizeof(float)*NB*NB,  (float*)(a[m][step]),    INOUT,
-                               sizeof(int),          &step,                   VALUE,
-                               strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
-                               strlen(taskcolor)+1,  taskcolor,  VALUE | TASKCOLOR,
+                               sizeof(int),          &NB,                     QUARK_VALUE,
+                               sizeof(float)*NB*NB,  (float*)(a[step][step]), QUARK_INPUT,
+                               sizeof(float)*NB*NB,  (float*)(a[m][step]),    QUARK_INOUT,
+                               sizeof(int),          &step,                   QUARK_VALUE,
+                               strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
+                               strlen(taskcolor)+1,  taskcolor,  QUARK_VALUE | TASKCOLOR,
                                0);
         }
         
@@ -247,35 +247,35 @@ int main (int argc, char **argv)
         snprintf( tasklabel, 200, "SPOTRF");
         snprintf( taskcolor, 200, SPOTRF_COLOR);
         QUARK_Insert_Task(quark,SCHED_tile_spotrf, HIGH_PRIORITY, 
-                           sizeof(int),          &NB,                     VALUE,
-                           sizeof(float)*NB*NB,  (float*)(a[step][step]), INOUT | LOCALITY,
-                           sizeof(int),          &INFO,                      INOUT,
-                           sizeof(int),          &step,                   VALUE,
-                           strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
-                           strlen(taskcolor)+1,  taskcolor,  VALUE | TASKCOLOR,
+                           sizeof(int),          &NB,                     QUARK_VALUE,
+                           sizeof(float)*NB*NB,  (float*)(a[step][step]), QUARK_INOUT | LOCALITY,
+                           sizeof(int),          &INFO,                      QUARK_INOUT,
+                           sizeof(int),          &step,                   QUARK_VALUE,
+                           strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
+                           strlen(taskcolor)+1,  taskcolor,  QUARK_VALUE | TASKCOLOR,
                            0);
         for (n = step+1; n < BB; n++){
             //tile_strsm((float*)(a[step][step]), (float*)(a[n][step]), BSIZE);
             snprintf( tasklabel, 200, "STRSM");
             snprintf( taskcolor, 200, STRSM_COLOR);
             QUARK_Insert_Task(quark,SCHED_tile_strsm, 0, 
-                               sizeof(int),          &NB,                    VALUE,
-                               sizeof(float)*NB*NB, (float*)(a[step][step]), INPUT,
-                               sizeof(float)*NB*NB,  (float*)(a[n][step]),    INOUT,
-                               sizeof(int),          &step,                   VALUE,
-                               strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
-                               strlen(taskcolor)+1,  taskcolor,  VALUE | TASKCOLOR,
+                               sizeof(int),          &NB,                    QUARK_VALUE,
+                               sizeof(float)*NB*NB, (float*)(a[step][step]), QUARK_INPUT,
+                               sizeof(float)*NB*NB,  (float*)(a[n][step]),    QUARK_INOUT,
+                               sizeof(int),          &step,                   QUARK_VALUE,
+                               strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
+                               strlen(taskcolor)+1,  taskcolor,  QUARK_VALUE | TASKCOLOR,
                                0);
             //tile_ssyrk((float*)(a[n][step]), (float*)(a[n][n]), BSIZE);
             snprintf( tasklabel, 200, "SSYRK");
             snprintf( taskcolor, 200, SSYRK_COLOR);
             QUARK_Insert_Task(quark,SCHED_tile_ssyrk, 0, 
-                               sizeof(int),          &NB,                     VALUE,
-                               sizeof(float)*NB*NB,  (float*)(a[n][step]),    INPUT,
-                               sizeof(float)*NB*NB,  (float*)(a[n][n]),       INOUT,
-                               sizeof(int),          &step,                   VALUE,
-                               strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
-                               strlen(taskcolor)+1,  taskcolor,  VALUE | TASKCOLOR,
+                               sizeof(int),          &NB,                     QUARK_VALUE,
+                               sizeof(float)*NB*NB,  (float*)(a[n][step]),    QUARK_INPUT,
+                               sizeof(float)*NB*NB,  (float*)(a[n][n]),       QUARK_INOUT,
+                               sizeof(int),          &step,                   QUARK_VALUE,
+                               strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
+                               strlen(taskcolor)+1,  taskcolor,  QUARK_VALUE | TASKCOLOR,
                                0);
         }
         for (m = step+2; m < BB; m++)
@@ -284,13 +284,13 @@ int main (int argc, char **argv)
                 snprintf( tasklabel, 200, "SGEMM");
                 snprintf( taskcolor, 200, SGEMM_COLOR);
                 QUARK_Insert_Task(quark,SCHED_tile_sgemm, 0, 
-                                   sizeof(int),          &NB,                     VALUE,
-                                   sizeof(float)*NB*NB,  (float*)(a[n][step]),    INPUT,
-                                   sizeof(float)*NB*NB,  (float*)(a[m][step]),    INPUT,
-                                   sizeof(float)*NB*NB,  (float*)(a[m][n]),       INOUT,
-                                   sizeof(int),          &step,                   VALUE,
-                                   strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
-                                   strlen(taskcolor)+1,  taskcolor,  VALUE | TASKCOLOR,
+                                   sizeof(int),          &NB,                     QUARK_VALUE,
+                                   sizeof(float)*NB*NB,  (float*)(a[n][step]),    QUARK_INPUT,
+                                   sizeof(float)*NB*NB,  (float*)(a[m][step]),    QUARK_INPUT,
+                                   sizeof(float)*NB*NB,  (float*)(a[m][n]),       QUARK_INOUT,
+                                   sizeof(int),          &step,                   QUARK_VALUE,
+                                   strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
+                                   strlen(taskcolor)+1,  taskcolor,  QUARK_VALUE | TASKCOLOR,
                                    0);
             }
     }

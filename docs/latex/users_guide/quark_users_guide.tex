@@ -150,7 +150,7 @@ The serial nature of the original code is preserved by enforcing the
 data dependencies between the kernels.  In order to support this, the
 kernel calls need to be extended to express the data sizes and the I/O
 usage.  For example, for kernel routine $function_K$, parameter $A$ is
-specified to be $2000$ bytes long and is used as \verb|INOUT| by this
+specified to be $2000$ bytes long and is used as \verb|QUARK_INOUT| by this
 kernel.  QUARK uses the parameter specifications to infer the
 dependencies between the various kernel routines in the application.
   These dependencies form an implicit DAG (Directed Acyclic Graph)
@@ -257,8 +257,8 @@ used as part of a multi-threaded library; this is described later.
       Quark *quark = QUARK_New( 2 );
       for ( idx=0; idx<strlen(str); idx++ )
           QUARK_Insert_Task( quark, hello_world_task, NULL,
-              sizeof(int), &idx, VALUE,
-              strlen(str)*sizeof(char), str, INOUT,
+              sizeof(int), &idx, QUARK_VALUE,
+              strlen(str)*sizeof(char), str, QUARK_INOUT,
               0 );
       QUARK_Delete( quark );
     }
@@ -280,11 +280,11 @@ threads, the master and one spawned worker thread.  Then, at each
 iteration of the loop in the main program, a new is inserted into the
 QUARK runtime system.  The task will call the function
 \verb|hello_world_task| when it is executed by the runtime.  The
-\verb|idx| argument is passed as \verb|VALUE| parameter, since is
+\verb|idx| argument is passed as \verb|QUARK_VALUE| parameter, since is
 unchanged by the function.  The \verb|str| argument is marked
-\verb|INOUT| since the string will be altered by the
+\verb|QUARK_INOUT| since the string will be altered by the
 \verb|hello_world_task|.  In this simple program, the use of a
-\verb|INOUT| dependency keeps the serialized semantics of the original
+\verb|QUARK_INOUT| dependency keeps the serialized semantics of the original
 loop.
 
 In \verb|hello_world_task|, the data is unpacked from QUARK and
@@ -356,17 +356,17 @@ The argument parameters to given to the \verb|function| are passed as
 the argument in bytes, a pointer to the argument, and a flag
 indicating the way that the argument is to be used.  This sequence of
 triplets is terminated by sending a 0 as the argument size.  The
-argument flag can be one of \verb|VALUE|, \verb|INPUT|, \verb|OUTPUT|,
-\verb|INOUT|, \verb|NODEP| and \verb|SCRATCH|.  These denote different
+argument flag can be one of \verb|QUARK_VALUE|, \verb|QUARK_INPUT|, \verb|QUARK_OUTPUT|,
+\verb|QUARK_INOUT|, \verb|NODEP| and \verb|QUARK_SCRATCH|.  These denote different
 ways that the argument is going to be used by \verb|function|.  Here,
-we describe the meaning of \verb|VALUE| and \verb|INOUT|.  The other
+we describe the meaning of \verb|QUARK_VALUE| and \verb|QUARK_INOUT|.  The other
 argument flags will be described later in this guide.
 \begin{description}
-\item[]\verb|VALUE| The parameter data is copied to the QUARK task and
+\item[]\verb|QUARK_VALUE| The parameter data is copied to the QUARK task and
   is not used for dependency resolution.  Since the parameter is
   copied over, it can be altered by the master thread without
   affecting the task.
-\item[]\verb|INOUT| The parameter is used as input as well as output
+\item[]\verb|QUARK_INOUT| The parameter is used as input as well as output
   in the \verb|function|.  Preceding reads and writes must be
   satisfied before this \verb|function| can be executed.
 \end{description}
@@ -390,23 +390,23 @@ void QUARK_Delete(Quark * quark);
 %% for \verb|dgemm| matrix multiplication.
 %% \begin{lstlisting}
 %% QUARK_Insert_Task( quark, SCHED_dgemm, NULL,
-%%     sizeof(char),         "N",        VALUE,
-%%     sizeof(char),         "T",        VALUE,
-%%     sizeof(int),          &m,         VALUE,
-%%     sizeof(int),          &n,         VALUE,
-%%     sizeof(int),          &k,         VALUE,
-%%     sizeof(double),       &alpha,     VALUE,
-%%     sizeof(double)*NB*NB, A,          INPUT,
-%%     sizeof(int),          &lda,       VALUE,
-%%     sizeof(double)*NB*NB, B,          INPUT,
-%%     sizeof(int),          &ldb,       VALUE,
-%%     sizeof(double),       &beta,      VALUE,
-%%     sizeof(double)*NB*NB, C,          INOUT,
-%%     sizeof(int),          &ldc,       VALUE,
+%%     sizeof(char),         "N",        QUARK_VALUE,
+%%     sizeof(char),         "T",        QUARK_VALUE,
+%%     sizeof(int),          &m,         QUARK_VALUE,
+%%     sizeof(int),          &n,         QUARK_VALUE,
+%%     sizeof(int),          &k,         QUARK_VALUE,
+%%     sizeof(double),       &alpha,     QUARK_VALUE,
+%%     sizeof(double)*NB*NB, A,          QUARK_INPUT,
+%%     sizeof(int),          &lda,       QUARK_VALUE,
+%%     sizeof(double)*NB*NB, B,          QUARK_INPUT,
+%%     sizeof(int),          &ldb,       QUARK_VALUE,
+%%     sizeof(double),       &beta,      QUARK_VALUE,
+%%     sizeof(double)*NB*NB, C,          QUARK_INOUT,
+%%     sizeof(int),          &ldc,       QUARK_VALUE,
 %%     0 );
 %% \end{lstlisting}
 %% The QUARK runtime will store the arguments, and when all the data
-%% dependencies (\verb|INPUT|, \verb|INOUT|, \verb|OUTPUT|) are
+%% dependencies (\verb|QUARK_INPUT|, \verb|QUARK_INOUT|, \verb|QUARK_OUTPUT|) are
 %% satisfied, QUARK will schedule \verb|SCHED_dgemm| for execution by a
 %% worker thread.
 
@@ -466,8 +466,8 @@ the parameter (even scalers need to be passed by reference), and some
 flags that are used to specify how the parameter is going to be used by
 the task and how dependencies on that parameter are to be resolved.
 The parameter must always specify its usage as one of the following:
-\verb|VALUE|, \verb|INPUT|, \verb|OUTPUT|, \verb|INOUT|, \verb|NODEP|
-and \verb|SCRATCH|.
+\verb|QUARK_VALUE|, \verb|QUARK_INPUT|, \verb|QUARK_OUTPUT|, \verb|QUARK_INOUT|, \verb|NODEP|
+and \verb|QUARK_SCRATCH|.
 \begin{samepage}
 \begin{lstlisting}
 QUARK_Insert_Task( Quark *quark, void (*function) (Quark *),
@@ -478,15 +478,15 @@ QUARK_Insert_Task( Quark *quark, void (*function) (Quark *),
 \end{lstlisting}
 \end{samepage}
 \begin{description}
-\item[]\verb|VALUE| The parameter data is copied to the QUARK task and
+\item[]\verb|QUARK_VALUE| The parameter data is copied to the QUARK task and
   is not used for dependency resolution.
-\item[]\verb|INPUT| The parameter is used as input only in the
+\item[]\verb|QUARK_INPUT| The parameter is used as input only in the
   \verb|function|; preceding write operations on this data must be
   satisfied before this \verb|function| can be executed.
-\item[]\verb|INOUT| The parameter is used as input as well as output
+\item[]\verb|QUARK_INOUT| The parameter is used as input as well as output
   in the \verb|function|.  Preceding reads and writes must be
   satisfied before this \verb|function| can be executed.
-\item[]\verb|OUTPUT| This parameter is used as output.  Preceding
+\item[]\verb|QUARK_OUTPUT| This parameter is used as output.  Preceding
   reads and writes must be satisfied before this \verb|function| can
   be executed.
 \item[]\verb|NODEP| The parameter is declared by the programmer to not
@@ -494,13 +494,13 @@ QUARK_Insert_Task( Quark *quark, void (*function) (Quark *),
   forcing scheduling; however it should be used with caution.
   Sometimes this is used if the programmer knows that sufficient
   dependencies are maintained by other parameters.
-\item[]\verb|SCRATCH| The parameter is declared as temporary scratch
+\item[]\verb|QUARK_SCRATCH| The parameter is declared as temporary scratch
   space, and if the parameter pointer is NULL, QUARK will allocate the
   data when needed and pass it to \verb|function|.
 \end{description}
 
 In addition, for parameters that may involve dependencies (i.e.,
-\verb|INPUT|, \verb|INOUT|, \verb|OUTPUT|) some optional information
+\verb|QUARK_INPUT|, \verb|QUARK_INOUT|, \verb|QUARK_OUTPUT|) some optional information
 can be passed in via the parameter flags.
 \begin{description}
 \item[]\verb|ACCUMULATOR| A parameter that is flagged as ACCUMULATOR
@@ -528,13 +528,13 @@ be combined to provide information to QUARK.
 \begin{lstlisting}
 QUARK_Task_Insert( quark, function, &tflags,
     size_of_data, ptr_to_data, arg_flags,
-    sizeof(int), &N, VALUE,
-    N*N*sizeof(double), ptr_to_A, INOUT | ACCUMULATOR,
-    N*N*sizeof(double), B, INOUT | LOCALITY,
-    N*N*sizeof(double), C, INPUT | QUARK_REGION_1 | QUARK_REGION_2 | QUARK_REGION_3,
-    N*N*sizeof(double), D, INOUT | QUARK_REGION_4,
-    N*N*sizeof(double), E, INOUT | QUARK_REGION_5 | QUARK_REGION_6 | QUARK_REGION_7,
-    N*N*sizeof(double), F, INOUT | GATHERV,
+    sizeof(int), &N, QUARK_VALUE,
+    N*N*sizeof(double), ptr_to_A, QUARK_INOUT | ACCUMULATOR,
+    N*N*sizeof(double), B, QUARK_INOUT | LOCALITY,
+    N*N*sizeof(double), C, QUARK_INPUT | QUARK_REGION_1 | QUARK_REGION_2 | QUARK_REGION_3,
+    N*N*sizeof(double), D, QUARK_INOUT | QUARK_REGION_4,
+    N*N*sizeof(double), E, QUARK_INOUT | QUARK_REGION_5 | QUARK_REGION_6 | QUARK_REGION_7,
+    N*N*sizeof(double), F, QUARK_INOUT | GATHERV,
     ... , 0 )
 \end{lstlisting}
 \end{samepage}
@@ -843,7 +843,7 @@ Fig.~\ref{fig:tileCholesky} can be translated into C code.  Because
 the data dependency DAG is inferred during runtime, the actual C code
 looks very similar to the pseudocode.  Each of the \verb|QUARK_CORE_|
 routines is a wrapper routine that inserts a task into the QUARK
-runtime, adding to the paramters their size, usage (e.g. \verb|INOUT|)
+runtime, adding to the paramters their size, usage (e.g. \verb|QUARK_INOUT|)
 and any other flags. In this example, the matrix multiplication
 \verb|DGEMM| task is shown in more detail in
 Fig.~\ref{fig:quark_core_dgemm}.  The use of these \verb|QUARK_CORE_|
@@ -891,19 +891,19 @@ library.
                       double beta, double *C, int ldc)
     {
         QUARK_Insert_Task(quark, CORE_dgemm_quark, task_flags,
-            sizeof(PLASMA_enum),    &transA,    VALUE,
-            sizeof(PLASMA_enum),    &transB,    VALUE,
-            sizeof(int),            &m,         VALUE,
-            sizeof(int),            &n,         VALUE,
-            sizeof(int),            &k,         VALUE,
-            sizeof(double),         &alpha,     VALUE,
-            sizeof(double)*nb*nb,   A,          INPUT,
-            sizeof(int),            &lda,       VALUE,
-            sizeof(double)*nb*nb,   B,          INPUT,
-            sizeof(int),            &ldb,       VALUE,
-            sizeof(double),         &beta,      VALUE,
-            sizeof(double)*nb*nb,   C,          INOUT,
-            sizeof(int),            &ldc,       VALUE,
+            sizeof(PLASMA_enum),    &transA,    QUARK_VALUE,
+            sizeof(PLASMA_enum),    &transB,    QUARK_VALUE,
+            sizeof(int),            &m,         QUARK_VALUE,
+            sizeof(int),            &n,         QUARK_VALUE,
+            sizeof(int),            &k,         QUARK_VALUE,
+            sizeof(double),         &alpha,     QUARK_VALUE,
+            sizeof(double)*nb*nb,   A,          QUARK_INPUT,
+            sizeof(int),            &lda,       QUARK_VALUE,
+            sizeof(double)*nb*nb,   B,          QUARK_INPUT,
+            sizeof(int),            &ldb,       QUARK_VALUE,
+            sizeof(double),         &beta,      QUARK_VALUE,
+            sizeof(double)*nb*nb,   C,          QUARK_INOUT,
+            sizeof(int),            &ldc,       QUARK_VALUE,
             0);
     }
 

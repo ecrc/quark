@@ -1,8 +1,8 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /*                                                                                               */
-/* INPUT:  ./tileChInv (MATRIX_SIZE) (TILE_SIZE) (NB_THREADS)                                    */
+/* QUARK_INPUT:  ./tileChInv (MATRIX_SIZE) (TILE_SIZE) (NB_THREADS)                                    */
 /*                                                                                               */
-/* OUTPUT:                                                                                       */
+/* QUARK_OUTPUT:                                                                                       */
 /*    when (#undef  SEQCHECK) (#define NUMCHECK)                                                 */
 /*    QUARK CHINV (MATRIX_SIZE) (TILE_SIZE) (NB_THREADS) (PERF) (CHECK)                           */
 /*                                                                                               */
@@ -40,7 +40,7 @@
 #include "quark.h"
 
 #undef  DEBUG
-#undef  ALLINOUT
+#undef  ALLQUARK_INOUT
 
 #define NUMCHECK           // NUMERICAL CHECK
 #undef SEQCHECK           // CHECK AGAINST SEQUENTIAL EXECUTION (You need to have NUMCHECK on for this to happen!)
@@ -51,12 +51,12 @@
 #undef  INNERLOOP_TRTRI_UP
 #define INNERLOOP_LAUUM_UP
 
-#if defined ALLINOUT // EA2ALL: FIX for handling antidependecies bug.
-#undef INPUT
-#undef OUTPUT
-#define INPUT  0x03
-#define OUTPUT 0x03
-#endif // ALLINOUT
+#if defined ALLQUARK_INOUT // EA2ALL: FIX for handling antidependecies bug.
+#undef QUARK_INPUT
+#undef QUARK_OUTPUT
+#define QUARK_INPUT  0x03
+#define QUARK_OUTPUT 0x03
+#endif // ALLQUARK_INOUT
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #include <time.h>
@@ -584,17 +584,17 @@ void tile_potrf_parallel(Quark *quark, double *A, int n, int nb_default)
 #endif // DEBUG
             snprintf( tasklabel, 200, "dsyrk %d %d", j, k);
             QUARK_Insert_Task(quark, SCHED_dsyrk, 0, 
-                               sizeof(char),         "L",        VALUE,
-                               sizeof(char),         "N",        VALUE,
-                               sizeof(int),          &nb[j],     VALUE,
-                               sizeof(int),          &nb[k],     VALUE,
-                               sizeof(double),       &mone,      VALUE, 
-                               sizeof(double)*NB*NB, A(j,k),     INPUT,
-                               sizeof(int),          &nb[j],     VALUE,
-                               sizeof(double),       &pone,      VALUE, 
-                               sizeof(double)*NB*NB, A(j,j),     INOUT | LOCALITY,
-                               sizeof(int),          &nb[j],     VALUE,
-                               strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
+                               sizeof(char),         "L",        QUARK_VALUE,
+                               sizeof(char),         "N",        QUARK_VALUE,
+                               sizeof(int),          &nb[j],     QUARK_VALUE,
+                               sizeof(int),          &nb[k],     QUARK_VALUE,
+                               sizeof(double),       &mone,      QUARK_VALUE, 
+                               sizeof(double)*NB*NB, A(j,k),     QUARK_INPUT,
+                               sizeof(int),          &nb[j],     QUARK_VALUE,
+                               sizeof(double),       &pone,      QUARK_VALUE, 
+                               sizeof(double)*NB*NB, A(j,j),     QUARK_INOUT | LOCALITY,
+                               sizeof(int),          &nb[j],     QUARK_VALUE,
+                               strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
                                0);
             core_event_end(0);
             core_log_event(0xA0A0A0, 0, 0);
@@ -606,12 +606,12 @@ void tile_potrf_parallel(Quark *quark, double *A, int n, int nb_default)
 #endif // DEBUG
           snprintf( tasklabel, 200, "dpotrf %d", j);
           QUARK_Insert_Task(quark, SCHED_dpotrf, 0, 
-                             sizeof(char),         "L",        VALUE,
-                             sizeof(int),          &nb[j],     VALUE,
-                             sizeof(double)*NB*NB, A(j,j),     INOUT | LOCALITY,
-                             sizeof(int),          &nb[j],     VALUE,
-                             sizeof(int),          &info,      VALUE,
-                             strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
+                             sizeof(char),         "L",        QUARK_VALUE,
+                             sizeof(int),          &nb[j],     QUARK_VALUE,
+                             sizeof(double)*NB*NB, A(j,j),     QUARK_INOUT | LOCALITY,
+                             sizeof(int),          &nb[j],     QUARK_VALUE,
+                             sizeof(int),          &info,      QUARK_VALUE,
+                             strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
                              0);
           core_event_end(0);
           core_log_event(0xA0A0A0, 0, 0);
@@ -632,20 +632,20 @@ void tile_potrf_parallel(Quark *quark, double *A, int n, int nb_default)
 #endif // DEBUG
               snprintf( tasklabel, 200, "dgemm %d %d %d", j,i,k);
               QUARK_Insert_Task(quark, SCHED_dgemm, 0, 
-                                 sizeof(char),         "N",        VALUE,
-                                 sizeof(char),         "T",        VALUE,
-                                 sizeof(int),          &nb[i],     VALUE,
-                                 sizeof(int),          &nb[j],     VALUE,
-                                 sizeof(int),          &nb[k],     VALUE,
-                                 sizeof(double),       &mone,      VALUE, 
-                                 sizeof(double)*NB*NB, A(i,k),     INPUT,
-                                 sizeof(int),          &nb[i],     VALUE,
-                                 sizeof(double)*NB*NB, A(j,k),     INPUT,
-                                 sizeof(int),          &nb[j],     VALUE,
-                                 sizeof(double),       &pone,      VALUE, 
-                                 sizeof(double)*NB*NB, A(i,j),     INOUT | LOCALITY | NOACCUMULATOR,
-                                 sizeof(int),          &nb[i],     VALUE,
-                                 strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
+                                 sizeof(char),         "N",        QUARK_VALUE,
+                                 sizeof(char),         "T",        QUARK_VALUE,
+                                 sizeof(int),          &nb[i],     QUARK_VALUE,
+                                 sizeof(int),          &nb[j],     QUARK_VALUE,
+                                 sizeof(int),          &nb[k],     QUARK_VALUE,
+                                 sizeof(double),       &mone,      QUARK_VALUE, 
+                                 sizeof(double)*NB*NB, A(i,k),     QUARK_INPUT,
+                                 sizeof(int),          &nb[i],     QUARK_VALUE,
+                                 sizeof(double)*NB*NB, A(j,k),     QUARK_INPUT,
+                                 sizeof(int),          &nb[j],     QUARK_VALUE,
+                                 sizeof(double),       &pone,      QUARK_VALUE, 
+                                 sizeof(double)*NB*NB, A(i,j),     QUARK_INOUT | LOCALITY | NOACCUMULATOR,
+                                 sizeof(int),          &nb[i],     QUARK_VALUE,
+                                 strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
                                  0);
               core_event_end(0);
               core_log_event(0xA0A0A0, 0, 0);
@@ -660,18 +660,18 @@ void tile_potrf_parallel(Quark *quark, double *A, int n, int nb_default)
             snprintf( tasklabel, 200, "dtrsm %d %d", j,i);
             core_event_start(0);
             QUARK_Insert_Task(quark, SCHED_dtrsm, 0, 
-                               sizeof(char),         "R",        VALUE,
-                               sizeof(char),         "L",        VALUE,
-                               sizeof(char),         "T",        VALUE,
-                               sizeof(char),         "N",        VALUE,
-                               sizeof(int),          &nb[i],     VALUE,
-                               sizeof(int),          &nb[j],     VALUE,
-                               sizeof(double),       &pone,      VALUE,
-                               sizeof(double)*NB*NB, A(j,j),     INPUT,
-                               sizeof(int),          &nb[j],     VALUE,
-                               sizeof(double)*NB*NB, A(i,j),     INOUT | LOCALITY,
-                               sizeof(int),          &nb[i],     VALUE,
-                               strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
+                               sizeof(char),         "R",        QUARK_VALUE,
+                               sizeof(char),         "L",        QUARK_VALUE,
+                               sizeof(char),         "T",        QUARK_VALUE,
+                               sizeof(char),         "N",        QUARK_VALUE,
+                               sizeof(int),          &nb[i],     QUARK_VALUE,
+                               sizeof(int),          &nb[j],     QUARK_VALUE,
+                               sizeof(double),       &pone,      QUARK_VALUE,
+                               sizeof(double)*NB*NB, A(j,j),     QUARK_INPUT,
+                               sizeof(int),          &nb[j],     QUARK_VALUE,
+                               sizeof(double)*NB*NB, A(i,j),     QUARK_INOUT | LOCALITY,
+                               sizeof(int),          &nb[i],     QUARK_VALUE,
+                               strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
                                0);
             core_event_end(0);
             core_log_event(0xA0A0A0, 0, 0);
@@ -725,12 +725,12 @@ void tile_trtri_parallel(Quark *quark, double *A, int n, int nb_default)
                         snprintf( tasklabel, 200, "dcopy %d %d", i, j);
                         k = nb[j]*nb[i];
                         QUARK_Insert_Task(quark, SCHED_dcopy, 0, 
-                                           sizeof(int),          &k,         VALUE,
-                                           sizeof(double)*NB*NB, A(i,j),     INPUT,
-                                           sizeof(int),          &pone,      VALUE,
-                                           sizeof(double)*NB*NB, Ac(i,j),    OUTPUT,
-                                           sizeof(int),          &pone,      VALUE,
-                                           strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
+                                           sizeof(int),          &k,         QUARK_VALUE,
+                                           sizeof(double)*NB*NB, A(i,j),     QUARK_INPUT,
+                                           sizeof(int),          &pone,      QUARK_VALUE,
+                                           sizeof(double)*NB*NB, Ac(i,j),    QUARK_OUTPUT,
+                                           sizeof(int),          &pone,      QUARK_VALUE,
+                                           strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
                                            0);
                         core_event_end(0);
                         core_log_event(0x000000, 0, 0);
@@ -747,12 +747,12 @@ void tile_trtri_parallel(Quark *quark, double *A, int n, int nb_default)
            printf("dtrtri %d\n", j);
 #endif // DEBUG
            QUARK_Insert_Task(quark, SCHED_dtrtri, 0, 
-           sizeof(char),         "L",        VALUE,
-           sizeof(char),         "N",        VALUE,
-           sizeof(int),          &nb[j],     VALUE,
-           sizeof(double)*NB*NB, Ac(j,j),     INOUT | NOCLOCALITY,
-           sizeof(int),          &nb[j],     VALUE,
-           sizeof(int),          &info,      VALUE,
+           sizeof(char),         "L",        QUARK_VALUE,
+           sizeof(char),         "N",        QUARK_VALUE,
+           sizeof(int),          &nb[j],     QUARK_VALUE,
+           sizeof(double)*NB*NB, Ac(j,j),     QUARK_INOUT | NOCLOCALITY,
+           sizeof(int),          &nb[j],     QUARK_VALUE,
+           sizeof(int),          &info,      QUARK_VALUE,
            0);
               core_event_end(0);
               core_log_event(0xA0A0A0, 0, 0);
@@ -767,18 +767,18 @@ void tile_trtri_parallel(Quark *quark, double *A, int n, int nb_default)
 #endif // DEBUG
             snprintf( tasklabel, 200, "dtrmm %d %d", i, j);
             QUARK_Insert_Task(quark, SCHED_dtrmm, 0, 
-                               sizeof(char),         "L",        VALUE,
-                               sizeof(char),         "L",        VALUE,
-                               sizeof(char),         "N",        VALUE,
-                               sizeof(char),         "N",        VALUE,
-                               sizeof(int),          &nb[i],     VALUE,
-                               sizeof(int),          &nb[j],     VALUE,
-                               sizeof(double),       &pone,      VALUE,
-                               sizeof(double)*NB*NB, Ac(i,i),     INPUT,
-                               sizeof(int),          &nb[i],     VALUE,
-                               sizeof(double)*NB*NB, Ac(i,j),     INOUT | LOCALITY,
-                               sizeof(int),          &nb[i],     VALUE,
-                               strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
+                               sizeof(char),         "L",        QUARK_VALUE,
+                               sizeof(char),         "L",        QUARK_VALUE,
+                               sizeof(char),         "N",        QUARK_VALUE,
+                               sizeof(char),         "N",        QUARK_VALUE,
+                               sizeof(int),          &nb[i],     QUARK_VALUE,
+                               sizeof(int),          &nb[j],     QUARK_VALUE,
+                               sizeof(double),       &pone,      QUARK_VALUE,
+                               sizeof(double)*NB*NB, Ac(i,i),     QUARK_INPUT,
+                               sizeof(int),          &nb[i],     QUARK_VALUE,
+                               sizeof(double)*NB*NB, Ac(i,j),     QUARK_INOUT | LOCALITY,
+                               sizeof(int),          &nb[i],     QUARK_VALUE,
+                               strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
                                0);
             core_event_end(0);
             core_log_event(0xA0A0A0, 0, 0);
@@ -798,21 +798,21 @@ void tile_trtri_parallel(Quark *quark, double *A, int n, int nb_default)
               snprintf( tasklabel, 200, "dgemm %d %d %d", i, j, k);
               snprintf( taskcolor, 200, "red");
               QUARK_Insert_Task(quark, SCHED_dgemm, 0, 
-                                 sizeof(char),         "N",        VALUE,
-                                 sizeof(char),         "N",        VALUE,
-                                 sizeof(int),          &nb[i],     VALUE,
-                                 sizeof(int),          &nb[j],     VALUE,
-                                 sizeof(int),          &nb[k],     VALUE,
-                                 sizeof(double),       &pone,      VALUE, 
-                                 sizeof(double)*NB*NB, Ac(i,k),    INPUT,
-                                 sizeof(int),          &nb[i],     VALUE,
-                                 sizeof(double)*NB*NB, A(k,j),     INPUT,
-                                 sizeof(int),          &nb[k],     VALUE,
-                                 sizeof(double),       &pone,      VALUE, 
-                                 sizeof(double)*NB*NB, Ac(i,j),   INOUT | LOCALITY | NOACCUMULATOR,
-                                 sizeof(int),          &nb[i],     VALUE,
-                                 strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
-                                 strlen(tasklabel)+1,  taskcolor,  VALUE | TASKCOLOR,
+                                 sizeof(char),         "N",        QUARK_VALUE,
+                                 sizeof(char),         "N",        QUARK_VALUE,
+                                 sizeof(int),          &nb[i],     QUARK_VALUE,
+                                 sizeof(int),          &nb[j],     QUARK_VALUE,
+                                 sizeof(int),          &nb[k],     QUARK_VALUE,
+                                 sizeof(double),       &pone,      QUARK_VALUE, 
+                                 sizeof(double)*NB*NB, Ac(i,k),    QUARK_INPUT,
+                                 sizeof(int),          &nb[i],     QUARK_VALUE,
+                                 sizeof(double)*NB*NB, A(k,j),     QUARK_INPUT,
+                                 sizeof(int),          &nb[k],     QUARK_VALUE,
+                                 sizeof(double),       &pone,      QUARK_VALUE, 
+                                 sizeof(double)*NB*NB, Ac(i,j),   QUARK_INOUT | LOCALITY | NOACCUMULATOR,
+                                 sizeof(int),          &nb[i],     QUARK_VALUE,
+                                 strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
+                                 strlen(tasklabel)+1,  taskcolor,  QUARK_VALUE | TASKCOLOR,
                                  0);
               core_event_end(0);
               core_log_event(0xA0A0A0, 0, 0);
@@ -826,18 +826,18 @@ void tile_trtri_parallel(Quark *quark, double *A, int n, int nb_default)
 #endif // DEBUG
             snprintf( tasklabel, 200, "dtrsm %d %d", i, j);
             QUARK_Insert_Task(quark, SCHED_dtrsm, 0,
-                               sizeof(char),         "R",        VALUE,
-                               sizeof(char),         "L",        VALUE,
-                               sizeof(char),         "N",        VALUE,
-                               sizeof(char),         "N",        VALUE,
-                               sizeof(int),          &nb[i],     VALUE,
-                               sizeof(int),          &nb[j],     VALUE,
-                               sizeof(double),       &mone,      VALUE,
-                               sizeof(double)*NB*NB, A(j,j),     INPUT,
-                               sizeof(int),          &nb[j],     VALUE,
-                               sizeof(double)*NB*NB, Ac(i,j),    INOUT | LOCALITY,
-                               sizeof(int),          &nb[i],     VALUE,
-                               strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
+                               sizeof(char),         "R",        QUARK_VALUE,
+                               sizeof(char),         "L",        QUARK_VALUE,
+                               sizeof(char),         "N",        QUARK_VALUE,
+                               sizeof(char),         "N",        QUARK_VALUE,
+                               sizeof(int),          &nb[i],     QUARK_VALUE,
+                               sizeof(int),          &nb[j],     QUARK_VALUE,
+                               sizeof(double),       &mone,      QUARK_VALUE,
+                               sizeof(double)*NB*NB, A(j,j),     QUARK_INPUT,
+                               sizeof(int),          &nb[j],     QUARK_VALUE,
+                               sizeof(double)*NB*NB, Ac(i,j),    QUARK_INOUT | LOCALITY,
+                               sizeof(int),          &nb[i],     QUARK_VALUE,
+                               strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
                                0);
             core_event_end(0);
             core_log_event(0xA0A0A0, 0, 0);
@@ -851,13 +851,13 @@ void tile_trtri_parallel(Quark *quark, double *A, int n, int nb_default)
 #endif // DEBUG
            snprintf( tasklabel, 200, "dtrtri %d", j);
            QUARK_Insert_Task(quark, SCHED_dtrtri, 0, 
-                              sizeof(char),         "L",        VALUE,
-                              sizeof(char),         "N",        VALUE,
-                              sizeof(int),          &nb[j],     VALUE,
-                              sizeof(double)*NB*NB, Ac(j,j),     INOUT | LOCALITY,
-                              sizeof(int),          &nb[j],     VALUE,
-                              sizeof(int),          &info,      VALUE,
-                              strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
+                              sizeof(char),         "L",        QUARK_VALUE,
+                              sizeof(char),         "N",        QUARK_VALUE,
+                              sizeof(int),          &nb[j],     QUARK_VALUE,
+                              sizeof(double)*NB*NB, Ac(j,j),     QUARK_INOUT | LOCALITY,
+                              sizeof(int),          &nb[j],     QUARK_VALUE,
+                              sizeof(int),          &info,      QUARK_VALUE,
+                              strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
                               0);
               core_event_end(0);
               core_log_event(0xA0A0A0, 0, 0);
@@ -903,12 +903,12 @@ void tile_lauum_parallel(Quark *quark, double *A, int n, int nb_default)
                         k = nb[j]*nb[i];
                         snprintf( tasklabel, 200, "dcopy %d %d", i, j);
                         QUARK_Insert_Task(quark, SCHED_dcopy, 0,
-                                           sizeof(int),          &k,         VALUE,
-                                           sizeof(double)*NB*NB, Ac(i,j),    INPUT,
-                                           sizeof(int),          &pone,      VALUE,
-                                           sizeof(double)*NB*NB, Ai(i,j),    OUTPUT,
-                                           sizeof(int),          &pone,      VALUE,
-                                           strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
+                                           sizeof(int),          &k,         QUARK_VALUE,
+                                           sizeof(double)*NB*NB, Ac(i,j),    QUARK_INPUT,
+                                           sizeof(int),          &pone,      QUARK_VALUE,
+                                           sizeof(double)*NB*NB, Ai(i,j),    QUARK_OUTPUT,
+                                           sizeof(int),          &pone,      QUARK_VALUE,
+                                           strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
                                            0);
                         core_event_end(0);
                         core_log_event(0x000000, 0, 0);
@@ -927,18 +927,18 @@ void tile_lauum_parallel(Quark *quark, double *A, int n, int nb_default)
 #endif // DEBUG
             snprintf( tasklabel, 200, "dtrmm %d %d", i, j);
             QUARK_Insert_Task(quark, SCHED_dtrmm, 0, 
-                               sizeof(char),         "L",        VALUE,
-                               sizeof(char),         "L",        VALUE,
-                               sizeof(char),         "T",        VALUE,
-                               sizeof(char),         "N",        VALUE,
-                               sizeof(int),          &nb[i],     VALUE,
-                               sizeof(int),          &nb[j],     VALUE,
-                               sizeof(double),       &pone,      VALUE,
-                               sizeof(double)*NB*NB, Ac(i,i),     INPUT,
-                               sizeof(int),          &nb[i],     VALUE,
-                               sizeof(double)*NB*NB, Ai(i,j),     INOUT | LOCALITY,
-                               sizeof(int),          &nb[i],     VALUE,
-                               strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
+                               sizeof(char),         "L",        QUARK_VALUE,
+                               sizeof(char),         "L",        QUARK_VALUE,
+                               sizeof(char),         "T",        QUARK_VALUE,
+                               sizeof(char),         "N",        QUARK_VALUE,
+                               sizeof(int),          &nb[i],     QUARK_VALUE,
+                               sizeof(int),          &nb[j],     QUARK_VALUE,
+                               sizeof(double),       &pone,      QUARK_VALUE,
+                               sizeof(double)*NB*NB, Ac(i,i),     QUARK_INPUT,
+                               sizeof(int),          &nb[i],     QUARK_VALUE,
+                               sizeof(double)*NB*NB, Ai(i,j),     QUARK_INOUT | LOCALITY,
+                               sizeof(int),          &nb[i],     QUARK_VALUE,
+                               strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
                                0);
             core_event_end(0);
             core_log_event(0xA0A0A0, 0, 0);
@@ -952,12 +952,12 @@ void tile_lauum_parallel(Quark *quark, double *A, int n, int nb_default)
 #endif // DEBUG
           snprintf( tasklabel, 200, "dlauum %d", i);
           QUARK_Insert_Task(quark, SCHED_dlauum, 0, 
-                             sizeof(char),         "L",        VALUE,
-                             sizeof(int),          &nb[i],     VALUE,
-                             sizeof(double)*NB*NB, Ai(i,i),     INOUT | LOCALITY,
-                             sizeof(int),          &nb[i],     VALUE,
-                             sizeof(int),          &info,      VALUE,
-                             strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
+                             sizeof(char),         "L",        QUARK_VALUE,
+                             sizeof(int),          &nb[i],     QUARK_VALUE,
+                             sizeof(double)*NB*NB, Ai(i,i),     QUARK_INOUT | LOCALITY,
+                             sizeof(int),          &nb[i],     QUARK_VALUE,
+                             sizeof(int),          &info,      QUARK_VALUE,
+                             strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
                              0);
           
           for ( j = 0 ; j < i ; j++ ) {
@@ -975,20 +975,20 @@ void tile_lauum_parallel(Quark *quark, double *A, int n, int nb_default)
 #endif // DEBUG
               snprintf( tasklabel, 200, "dgemm %d %d %d", i, j, k);
               QUARK_Insert_Task(quark, SCHED_dgemm, 0, 
-                                 sizeof(char),         "T",        VALUE,
-                                 sizeof(char),         "N",        VALUE,
-                                 sizeof(int),          &nb[i],     VALUE,
-                                 sizeof(int),          &nb[j],     VALUE,
-                                 sizeof(int),          &nb[k],     VALUE,
-                                 sizeof(double),       &pone,      VALUE, 
-                                 sizeof(double)*NB*NB, Ac(k,i),     INPUT,
-                                 sizeof(int),          &nb[k],     VALUE,
-                                 sizeof(double)*NB*NB, Ac(k,j),     INPUT,
-                                 sizeof(int),          &nb[k],     VALUE,
-                                 sizeof(double),       &pone,      VALUE, 
-                                 sizeof(double)*NB*NB, Ai(i,j),     INOUT | LOCALITY | NOACCUMULATOR,
-                                 sizeof(int),          &nb[i],     VALUE,
-                                 strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
+                                 sizeof(char),         "T",        QUARK_VALUE,
+                                 sizeof(char),         "N",        QUARK_VALUE,
+                                 sizeof(int),          &nb[i],     QUARK_VALUE,
+                                 sizeof(int),          &nb[j],     QUARK_VALUE,
+                                 sizeof(int),          &nb[k],     QUARK_VALUE,
+                                 sizeof(double),       &pone,      QUARK_VALUE, 
+                                 sizeof(double)*NB*NB, Ac(k,i),     QUARK_INPUT,
+                                 sizeof(int),          &nb[k],     QUARK_VALUE,
+                                 sizeof(double)*NB*NB, Ac(k,j),     QUARK_INPUT,
+                                 sizeof(int),          &nb[k],     QUARK_VALUE,
+                                 sizeof(double),       &pone,      QUARK_VALUE, 
+                                 sizeof(double)*NB*NB, Ai(i,j),     QUARK_INOUT | LOCALITY | NOACCUMULATOR,
+                                 sizeof(int),          &nb[i],     QUARK_VALUE,
+                                 strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
                                  0);
               core_event_end(0);
               core_log_event(0xA0A0A0, 0, 0);
@@ -1004,17 +1004,17 @@ void tile_lauum_parallel(Quark *quark, double *A, int n, int nb_default)
 #endif // DEBUG
             snprintf( tasklabel, 200, "dsyrk %d %d", i, k);
             QUARK_Insert_Task(quark, SCHED_dsyrk, 0, 
-                               sizeof(char),         "L",        VALUE,
-                               sizeof(char),         "T",        VALUE,
-                               sizeof(int),          &nb[i],     VALUE,
-                               sizeof(int),          &nb[k],     VALUE,
-                               sizeof(double),       &pone,      VALUE, 
-                               sizeof(double)*NB*NB, Ac(k,i),     INPUT,
-                               sizeof(int),          &nb[k],     VALUE,
-                               sizeof(double),       &pone,      VALUE, 
-                               sizeof(double)*NB*NB, Ai(i,i),     INOUT | LOCALITY,
-                               sizeof(int),          &nb[i],     VALUE,
-                               strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
+                               sizeof(char),         "L",        QUARK_VALUE,
+                               sizeof(char),         "T",        QUARK_VALUE,
+                               sizeof(int),          &nb[i],     QUARK_VALUE,
+                               sizeof(int),          &nb[k],     QUARK_VALUE,
+                               sizeof(double),       &pone,      QUARK_VALUE, 
+                               sizeof(double)*NB*NB, Ac(k,i),     QUARK_INPUT,
+                               sizeof(int),          &nb[k],     QUARK_VALUE,
+                               sizeof(double),       &pone,      QUARK_VALUE, 
+                               sizeof(double)*NB*NB, Ai(i,i),     QUARK_INOUT | LOCALITY,
+                               sizeof(int),          &nb[i],     QUARK_VALUE,
+                               strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
                                0);
             core_event_end(0);
             core_log_event(0xA0A0A0, 0, 0);

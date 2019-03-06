@@ -390,20 +390,20 @@ void tile_el_you_parallel(Quark *quark, double *A, double *L, int *IPIV, int IB,
         snprintf( tasklabel, 200, "%d %d", k, k);
         priority = 100;
         QUARK_Insert_Task(quark, SCHED_dgetrf, 0,
-                           sizeof(int),          &NB,        VALUE,
-                           sizeof(int),          &NB,        VALUE,
-                           sizeof(int),          &IB,        VALUE,
-                           sizeof(double)*NB*NB,        A(k, k),    INOUT | LOCALITY,
-                           sizeof(int),          &NB,        VALUE,
-                           sizeof(double)*NB,           IPIV(k, k), OUTPUT,
-//            sizeof(double)*NB,   IPIV(k, k),         INPUT,
-                           sizeof(int),          &k,         VALUE,
-                           strlen(taskcolor)+1,  taskcolor,  VALUE | TASKCOLOR,
-                           strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
-                           sizeof(int),       &priority,  VALUE | TASK_PRIORITY,
-/*                            sizeof(double)*NB*NB,        A(k, k),    INPUT, /\* Double one of the pointers TESTING TODO FIXME *\/ */
-/*                            sizeof(double)*NB*NB,        A(k, k),    OUTPUT, /\* Double one of the pointers TESTING TODO FIXME *\/ */
-/*                            sizeof(double)*NB*NB,        A(k, k),    INOUT, /\* Double one of the pointers TESTING TODO FIXME *\/ */
+                           sizeof(int),          &NB,        QUARK_VALUE,
+                           sizeof(int),          &NB,        QUARK_VALUE,
+                           sizeof(int),          &IB,        QUARK_VALUE,
+                           sizeof(double)*NB*NB,        A(k, k),    QUARK_INOUT | LOCALITY,
+                           sizeof(int),          &NB,        QUARK_VALUE,
+                           sizeof(double)*NB,           IPIV(k, k), QUARK_OUTPUT,
+//            sizeof(double)*NB,   IPIV(k, k),         QUARK_INPUT,
+                           sizeof(int),          &k,         QUARK_VALUE,
+                           strlen(taskcolor)+1,  taskcolor,  QUARK_VALUE | TASKCOLOR,
+                           strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
+                           sizeof(int),       &priority,  QUARK_VALUE | TASK_PRIORITY,
+/*                            sizeof(double)*NB*NB,        A(k, k),    QUARK_INPUT, /\* Double one of the pointers TESTING TODO FIXME *\/ */
+/*                            sizeof(double)*NB*NB,        A(k, k),    QUARK_OUTPUT, /\* Double one of the pointers TESTING TODO FIXME *\/ */
+/*                            sizeof(double)*NB*NB,        A(k, k),    QUARK_INOUT, /\* Double one of the pointers TESTING TODO FIXME *\/ */
                            0);
         core_event_end(0);
         core_log_event(QUARK_COLOR, 0, 0);
@@ -415,21 +415,21 @@ void tile_el_you_parallel(Quark *quark, double *A, double *L, int *IPIV, int IB,
             priority = 50;
         priority = 100;
             QUARK_Insert_Task_In_Sequence(quark, SCHED_dgessm, seq1, req1, 0,
-                               sizeof(int),          &NB,        VALUE,
-                               sizeof(int),          &NB,        VALUE,
-                               sizeof(int),          &NB,        VALUE,
-                               sizeof(int),          &IB,        VALUE,
-                               sizeof(double)*NB,           IPIV(k, k), INPUT,
+                               sizeof(int),          &NB,        QUARK_VALUE,
+                               sizeof(int),          &NB,        QUARK_VALUE,
+                               sizeof(int),          &NB,        QUARK_VALUE,
+                               sizeof(int),          &IB,        QUARK_VALUE,
+                               sizeof(double)*NB,           IPIV(k, k), QUARK_INPUT,
                                sizeof(double)*NB*NB,        A(k, k),    NODEP | LOCALITY,
-                               sizeof(int),          &NB,        VALUE,
-                               sizeof(double)*NB*NB,        A(k, n),    INOUT,
-//                sizeof(double)*NB*NB,   A(k, n),         INOUT ,
-//                sizeof(double)*NB*NB,   A(k, n),         INPUT ,
-                               sizeof(int),          &NB,        VALUE,
-                               sizeof(int),          &n,         VALUE,
-                               strlen(taskcolor)+1,  taskcolor,  VALUE | TASKCOLOR,
-                               strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
-                           sizeof(int),       &priority,  VALUE | TASK_PRIORITY,
+                               sizeof(int),          &NB,        QUARK_VALUE,
+                               sizeof(double)*NB*NB,        A(k, n),    QUARK_INOUT,
+//                sizeof(double)*NB*NB,   A(k, n),         QUARK_INOUT ,
+//                sizeof(double)*NB*NB,   A(k, n),         QUARK_INPUT ,
+                               sizeof(int),          &NB,        QUARK_VALUE,
+                               sizeof(int),          &n,         QUARK_VALUE,
+                               strlen(taskcolor)+1,  taskcolor,  QUARK_VALUE | TASKCOLOR,
+                               strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
+                           sizeof(int),       &priority,  QUARK_VALUE | TASK_PRIORITY,
                                0);
 /*             core_event_end(0); */
 /*             core_log_event(QUARK_COLOR, 0, 0); */
@@ -444,22 +444,22 @@ void tile_el_you_parallel(Quark *quark, double *A, double *L, int *IPIV, int IB,
             priority = 75;
         priority = 100;
             QUARK_Insert_Task(quark, SCHED_dtstrf, 0,
-                               sizeof(int),          &NB,        VALUE,
-                               sizeof(int),          &NB,        VALUE,
-                               sizeof(int),          &IB,        VALUE,
-                               sizeof(int),          &NB,        VALUE,
-                               sizeof(double)*NB*NB,        A(k, k),    INOUT | LOCALITY,
-                               sizeof(int),          &NB,        VALUE,
-                               sizeof(double)*NB*NB,        A(m, k),    INOUT,
-                               sizeof(int),          &NB,        VALUE,
-                               sizeof(double)*NB*IB,        L(m, k),    OUTPUT,
-                               sizeof(int),          &IB,        VALUE,
-                               sizeof(int)*NB,           IPIV(m, k), OUTPUT,
-                               sizeof(int),          &k,         VALUE,
-                               2000,          NULL,         SCRATCH,
-                               strlen(taskcolor)+1,  taskcolor,  VALUE | TASKCOLOR,
-                               strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
-                             sizeof(int),       &priority,  VALUE | TASK_PRIORITY,
+                               sizeof(int),          &NB,        QUARK_VALUE,
+                               sizeof(int),          &NB,        QUARK_VALUE,
+                               sizeof(int),          &IB,        QUARK_VALUE,
+                               sizeof(int),          &NB,        QUARK_VALUE,
+                               sizeof(double)*NB*NB,        A(k, k),    QUARK_INOUT | LOCALITY,
+                               sizeof(int),          &NB,        QUARK_VALUE,
+                               sizeof(double)*NB*NB,        A(m, k),    QUARK_INOUT,
+                               sizeof(int),          &NB,        QUARK_VALUE,
+                               sizeof(double)*NB*IB,        L(m, k),    QUARK_OUTPUT,
+                               sizeof(int),          &IB,        QUARK_VALUE,
+                               sizeof(int)*NB,           IPIV(m, k), QUARK_OUTPUT,
+                               sizeof(int),          &k,         QUARK_VALUE,
+                               2000,          NULL,         QUARK_SCRATCH,
+                               strlen(taskcolor)+1,  taskcolor,  QUARK_VALUE | TASKCOLOR,
+                               strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
+                             sizeof(int),       &priority,  QUARK_VALUE | TASK_PRIORITY,
                                0);
 /*             core_event_end(0); */
 /*             core_log_event(QUARK_COLOR, 0, 0); */
@@ -471,24 +471,24 @@ void tile_el_you_parallel(Quark *quark, double *A, double *L, int *IPIV, int IB,
                 priority = 10;
         priority = 100;
                 QUARK_Insert_Task(quark, SCHED_dssssm, 0,
-                                   sizeof(int),          &NB,        VALUE,
-                                   sizeof(int),          &NB,        VALUE,
-                                   sizeof(int),          &NB,        VALUE,
-                                   sizeof(int),          &IB,        VALUE,
-                                   sizeof(int),          &NB,        VALUE,
-                                   sizeof(double)*NB*NB,        A(k, n),    INOUT | LOCALITY,
-                                   sizeof(int),          &NB,        VALUE,
-                                   sizeof(double)*NB*NB,        A(m, n),    INOUT,
-                                   sizeof(int),          &NB,        VALUE,
-                                   sizeof(double)*NB*IB,        L(m, k),    INPUT,
-                                   sizeof(int),          &IB,        VALUE,
-                                   sizeof(double)*NB*NB,        A(m, k),    INPUT,
-                                   sizeof(int),          &NB,        VALUE,
-                                   sizeof(int)*NB,           IPIV(m, k), INPUT,
-                                   sizeof(int),          &n,         VALUE,
-                                   strlen(taskcolor)+1,  taskcolor,  VALUE | TASKCOLOR,
-                                   strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL,
-                                  sizeof(int),       &priority,  VALUE | TASK_PRIORITY,
+                                   sizeof(int),          &NB,        QUARK_VALUE,
+                                   sizeof(int),          &NB,        QUARK_VALUE,
+                                   sizeof(int),          &NB,        QUARK_VALUE,
+                                   sizeof(int),          &IB,        QUARK_VALUE,
+                                   sizeof(int),          &NB,        QUARK_VALUE,
+                                   sizeof(double)*NB*NB,        A(k, n),    QUARK_INOUT | LOCALITY,
+                                   sizeof(int),          &NB,        QUARK_VALUE,
+                                   sizeof(double)*NB*NB,        A(m, n),    QUARK_INOUT,
+                                   sizeof(int),          &NB,        QUARK_VALUE,
+                                   sizeof(double)*NB*IB,        L(m, k),    QUARK_INPUT,
+                                   sizeof(int),          &IB,        QUARK_VALUE,
+                                   sizeof(double)*NB*NB,        A(m, k),    QUARK_INPUT,
+                                   sizeof(int),          &NB,        QUARK_VALUE,
+                                   sizeof(int)*NB,           IPIV(m, k), QUARK_INPUT,
+                                   sizeof(int),          &n,         QUARK_VALUE,
+                                   strlen(taskcolor)+1,  taskcolor,  QUARK_VALUE | TASKCOLOR,
+                                   strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL,
+                                  sizeof(int),       &priority,  QUARK_VALUE | TASK_PRIORITY,
                                    0);
 /*                 core_event_end(0); */
 /*                 core_log_event(QUARK_COLOR, 0, 0); */
@@ -522,20 +522,20 @@ void tile_el_you_parallel(Quark *quark, double *A, double *L, int *IPIV, int IB,
 /*         snprintf( tasklabel, 200, "%d %d", k, k); */
 /*         priority = 100; */
 /*         QUARK_Insert_Task(quark, SCHED_dgetrf, 0,  */
-/*                            sizeof(int),          &NB,        VALUE, */
-/*                            sizeof(int),          &NB,        VALUE, */
-/*                            sizeof(int),          &IB,        VALUE, */
-/*                            sizeof(double)*NB*NB,        A(k, k),    INOUT | LOCALITY, */
-/*                            sizeof(int),          &NB,        VALUE, */
-/*                            sizeof(double)*NB,           IPIV(k, k), OUTPUT, */
-/* //            sizeof(double)*NB,   IPIV(k, k),         INPUT, */
-/*                            sizeof(int),          &k,         VALUE, */
-/*                            strlen(taskcolor)+1,  taskcolor,  VALUE | TASKCOLOR, */
-/*                            strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL, */
-/*                            sizeof(int),       &priority,  VALUE | TASK_PRIORITY, */
-/* /\*                            sizeof(double)*NB*NB,        A(k, k),    INPUT, /\\* Double one of the pointers TESTING TODO FIXME *\\/ *\/ */
-/* /\*                            sizeof(double)*NB*NB,        A(k, k),    OUTPUT, /\\* Double one of the pointers TESTING TODO FIXME *\\/ *\/ */
-/* /\*                            sizeof(double)*NB*NB,        A(k, k),    INOUT, /\\* Double one of the pointers TESTING TODO FIXME *\\/ *\/ */
+/*                            sizeof(int),          &NB,        QUARK_VALUE, */
+/*                            sizeof(int),          &NB,        QUARK_VALUE, */
+/*                            sizeof(int),          &IB,        QUARK_VALUE, */
+/*                            sizeof(double)*NB*NB,        A(k, k),    QUARK_INOUT | LOCALITY, */
+/*                            sizeof(int),          &NB,        QUARK_VALUE, */
+/*                            sizeof(double)*NB,           IPIV(k, k), QUARK_OUTPUT, */
+/* //            sizeof(double)*NB,   IPIV(k, k),         QUARK_INPUT, */
+/*                            sizeof(int),          &k,         QUARK_VALUE, */
+/*                            strlen(taskcolor)+1,  taskcolor,  QUARK_VALUE | TASKCOLOR, */
+/*                            strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL, */
+/*                            sizeof(int),       &priority,  QUARK_VALUE | TASK_PRIORITY, */
+/* /\*                            sizeof(double)*NB*NB,        A(k, k),    QUARK_INPUT, /\\* Double one of the pointers TESTING TODO FIXME *\\/ *\/ */
+/* /\*                            sizeof(double)*NB*NB,        A(k, k),    QUARK_OUTPUT, /\\* Double one of the pointers TESTING TODO FIXME *\\/ *\/ */
+/* /\*                            sizeof(double)*NB*NB,        A(k, k),    QUARK_INOUT, /\\* Double one of the pointers TESTING TODO FIXME *\\/ *\/ */
 /*                            0); */
 /*         core_event_end(0); */
 /*         core_log_event(QUARK_COLOR, 0, 0); */
@@ -546,22 +546,22 @@ void tile_el_you_parallel(Quark *quark, double *A, double *L, int *IPIV, int IB,
 /* /\*             core_event_start(0); *\/ */
 /*             priority = 75; */
 /*             QUARK_Insert_Task(quark, SCHED_dtstrf, 0, */
-/*                                sizeof(int),          &NB,        VALUE, */
-/*                                sizeof(int),          &NB,        VALUE, */
-/*                                sizeof(int),          &IB,        VALUE, */
-/*                                sizeof(int),          &NB,        VALUE, */
-/*                                sizeof(double)*NB*NB,        A(k, k),    INOUT | LOCALITY, */
-/*                                sizeof(int),          &NB,        VALUE, */
-/*                                sizeof(double)*NB*NB,        A(m, k),    INOUT, */
-/*                                sizeof(int),          &NB,        VALUE, */
-/*                                sizeof(double)*NB*IB,        L(m, k),    OUTPUT, */
-/*                                sizeof(int),          &IB,        VALUE, */
-/*                                sizeof(int)*NB,           IPIV(m, k), OUTPUT, */
-/*                                sizeof(int),          &k,         VALUE, */
-/*                                strlen(taskcolor)+1,  taskcolor,  VALUE | TASKCOLOR, */
-/*                                strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL, */
-/*                                2000,          NULL,         SCRATCH, */
-/*                                sizeof(int),       &priority,  VALUE | TASK_PRIORITY, */
+/*                                sizeof(int),          &NB,        QUARK_VALUE, */
+/*                                sizeof(int),          &NB,        QUARK_VALUE, */
+/*                                sizeof(int),          &IB,        QUARK_VALUE, */
+/*                                sizeof(int),          &NB,        QUARK_VALUE, */
+/*                                sizeof(double)*NB*NB,        A(k, k),    QUARK_INOUT | LOCALITY, */
+/*                                sizeof(int),          &NB,        QUARK_VALUE, */
+/*                                sizeof(double)*NB*NB,        A(m, k),    QUARK_INOUT, */
+/*                                sizeof(int),          &NB,        QUARK_VALUE, */
+/*                                sizeof(double)*NB*IB,        L(m, k),    QUARK_OUTPUT, */
+/*                                sizeof(int),          &IB,        QUARK_VALUE, */
+/*                                sizeof(int)*NB,           IPIV(m, k), QUARK_OUTPUT, */
+/*                                sizeof(int),          &k,         QUARK_VALUE, */
+/*                                strlen(taskcolor)+1,  taskcolor,  QUARK_VALUE | TASKCOLOR, */
+/*                                strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL, */
+/*                                2000,          NULL,         QUARK_SCRATCH, */
+/*                                sizeof(int),       &priority,  QUARK_VALUE | TASK_PRIORITY, */
 /*                                0); */
 /* /\*             core_event_end(0); *\/ */
 /* /\*             core_log_event(QUARK_COLOR, 0, 0); *\/ */
@@ -573,21 +573,21 @@ void tile_el_you_parallel(Quark *quark, double *A, double *L, int *IPIV, int IB,
 /* /\*             core_event_start(0); *\/ */
 /*             priority = 50; */
 /*             QUARK_Insert_Task_In_Sequence(quark, SCHED_dgessm, seq1, req1, 0,  */
-/*                                sizeof(int),          &NB,        VALUE, */
-/*                                sizeof(int),          &NB,        VALUE, */
-/*                                sizeof(int),          &NB,        VALUE, */
-/*                                sizeof(int),          &IB,        VALUE, */
-/*                                sizeof(double)*NB,           IPIV(k, k), INPUT, */
+/*                                sizeof(int),          &NB,        QUARK_VALUE, */
+/*                                sizeof(int),          &NB,        QUARK_VALUE, */
+/*                                sizeof(int),          &NB,        QUARK_VALUE, */
+/*                                sizeof(int),          &IB,        QUARK_VALUE, */
+/*                                sizeof(double)*NB,           IPIV(k, k), QUARK_INPUT, */
 /*                                sizeof(double)*NB*NB,        A(k, k),    NODEP, */
-/*                                sizeof(int),          &NB,        VALUE, */
-/*                                sizeof(double)*NB*NB,        A(k, n),    INOUT | LOCALITY, */
-/* //                sizeof(double)*NB*NB,   A(k, n),         INOUT , */
-/* //                sizeof(double)*NB*NB,   A(k, n),         INPUT , */
-/*                                sizeof(int),          &NB,        VALUE, */
-/*                                sizeof(int),          &n,         VALUE, */
-/*                                strlen(taskcolor)+1,  taskcolor,  VALUE | TASKCOLOR, */
-/*                                strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL, */
-/*                            sizeof(int),       &priority,  VALUE | TASK_PRIORITY, */
+/*                                sizeof(int),          &NB,        QUARK_VALUE, */
+/*                                sizeof(double)*NB*NB,        A(k, n),    QUARK_INOUT | LOCALITY, */
+/* //                sizeof(double)*NB*NB,   A(k, n),         QUARK_INOUT , */
+/* //                sizeof(double)*NB*NB,   A(k, n),         QUARK_INPUT , */
+/*                                sizeof(int),          &NB,        QUARK_VALUE, */
+/*                                sizeof(int),          &n,         QUARK_VALUE, */
+/*                                strlen(taskcolor)+1,  taskcolor,  QUARK_VALUE | TASKCOLOR, */
+/*                                strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL, */
+/*                            sizeof(int),       &priority,  QUARK_VALUE | TASK_PRIORITY, */
 /*                                0); */
 /* /\*             core_event_end(0); *\/ */
 /* /\*             core_log_event(QUARK_COLOR, 0, 0); *\/ */
@@ -599,24 +599,24 @@ void tile_el_you_parallel(Quark *quark, double *A, double *L, int *IPIV, int IB,
 /* /\*                 core_event_start(0); *\/ */
 /*                 priority = 10; */
 /*                 QUARK_Insert_Task(quark, SCHED_dssssm, 0, */
-/*                                    sizeof(int),          &NB,        VALUE, */
-/*                                    sizeof(int),          &NB,        VALUE, */
-/*                                    sizeof(int),          &NB,        VALUE, */
-/*                                    sizeof(int),          &IB,        VALUE, */
-/*                                    sizeof(int),          &NB,        VALUE, */
-/*                                    sizeof(double)*NB*NB,        A(k, n),    INOUT | LOCALITY, */
-/*                                    sizeof(int),          &NB,        VALUE, */
-/*                                    sizeof(double)*NB*NB,        A(m, n),    INOUT, */
-/*                                    sizeof(int),          &NB,        VALUE, */
-/*                                    sizeof(double)*NB*IB,        L(m, k),    INPUT, */
-/*                                    sizeof(int),          &IB,        VALUE, */
-/*                                    sizeof(double)*NB*NB,        A(m, k),    INPUT, */
-/*                                    sizeof(int),          &NB,        VALUE, */
-/*                                    sizeof(int)*NB,           IPIV(m, k), INPUT, */
-/*                                    sizeof(int),          &n,         VALUE, */
-/*                                    strlen(taskcolor)+1,  taskcolor,  VALUE | TASKCOLOR, */
-/*                                    strlen(tasklabel)+1,  tasklabel,  VALUE | TASKLABEL, */
-/*                                    sizeof(int),       &priority,  VALUE | TASK_PRIORITY, */
+/*                                    sizeof(int),          &NB,        QUARK_VALUE, */
+/*                                    sizeof(int),          &NB,        QUARK_VALUE, */
+/*                                    sizeof(int),          &NB,        QUARK_VALUE, */
+/*                                    sizeof(int),          &IB,        QUARK_VALUE, */
+/*                                    sizeof(int),          &NB,        QUARK_VALUE, */
+/*                                    sizeof(double)*NB*NB,        A(k, n),    QUARK_INOUT | LOCALITY, */
+/*                                    sizeof(int),          &NB,        QUARK_VALUE, */
+/*                                    sizeof(double)*NB*NB,        A(m, n),    QUARK_INOUT, */
+/*                                    sizeof(int),          &NB,        QUARK_VALUE, */
+/*                                    sizeof(double)*NB*IB,        L(m, k),    QUARK_INPUT, */
+/*                                    sizeof(int),          &IB,        QUARK_VALUE, */
+/*                                    sizeof(double)*NB*NB,        A(m, k),    QUARK_INPUT, */
+/*                                    sizeof(int),          &NB,        QUARK_VALUE, */
+/*                                    sizeof(int)*NB,           IPIV(m, k), QUARK_INPUT, */
+/*                                    sizeof(int),          &n,         QUARK_VALUE, */
+/*                                    strlen(taskcolor)+1,  taskcolor,  QUARK_VALUE | TASKCOLOR, */
+/*                                    strlen(tasklabel)+1,  tasklabel,  QUARK_VALUE | TASKLABEL, */
+/*                                    sizeof(int),       &priority,  QUARK_VALUE | TASK_PRIORITY, */
 /*                                    0); */
 /* /\*                 core_event_end(0); *\/ */
 /* /\*                 core_log_event(QUARK_COLOR, 0, 0); *\/ */

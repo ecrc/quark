@@ -59,10 +59,10 @@ void matmul_quark_task( Quark *quark )
 void matmul_quark_call( Quark *quark, double *A, double *B, double *C, int NB )
 {
     QUARK_Insert_Task( quark, matmul_quark_task, NULL,
-                       sizeof(double)*NB*NB, A, INPUT,
-                       sizeof(double)*NB*NB, B, INPUT,
-                       sizeof(double)*NB*NB, C, INOUT,
-                       sizeof(int), &NB, VALUE,
+                       sizeof(double)*NB*NB, A, QUARK_INPUT,
+                       sizeof(double)*NB*NB, B, QUARK_INPUT,
+                       sizeof(double)*NB*NB, C, QUARK_INOUT,
+                       sizeof(int), &NB, QUARK_VALUE,
                        0 );
 }
 

@@ -20,7 +20,7 @@
 #include <stdio.h>
 
 #if defined( _WIN32 )
-  /* This must be included before INPUT is defined below, otherwise we
+  /* This must be included before QUARK_INPUT is defined below, otherwise we
      have a name clash/problem  */
   #include <windows.h>
   #include <limits.h>
@@ -56,15 +56,15 @@ typedef enum { QUARK_REGION_L=QUARK_REGION_0|QUARK_REGION_1|QUARK_REGION_2,
                QUARK_REGION_U=QUARK_REGION_5|QUARK_REGION_6|QUARK_REGION_7 } quark_ldu_region_t;
 
 /* Data items can be: */
-/*  INPUT, OUTPUT, INOUT:  these data items create dependencies */
-/*  VALUE:  these data items get copied over */
+/*  QUARK_INPUT, QUARK_OUTPUT, QUARK_INOUT:  these data items create dependencies */
+/*  QUARK_VALUE:  these data items get copied over */
 /*  NODEP:  these data items get copied over, and are not used for dependencies */
-/*  SCRATCH:  these data items can be allocated (and deallocted) by the scheduler when tasks execute  */
+/*  QUARK_SCRATCH:  these data items can be allocated (and deallocted) by the scheduler when tasks execute  */
 #define QUARK_DIRECTION_BITMASK 0x000F00
-typedef enum { QINPUT=0x100, OUTPUT=0x200, INOUT=0x300, VALUE=0x400, NODEP=0x500, SCRATCH=0x600} quark_direction_t;
-#define INPUT 0x100
+typedef enum { QUARK_INPUT=0x100, QUARK_OUTPUT=0x200, QUARK_INOUT=0x300, QUARK_VALUE=0x400, NODEP=0x500, QUARK_SCRATCH=0x600} quark_direction_t;
+#define QUARK_INPUT 0x100
 
-#define QUARK_VALUE_FLAGS_BITMASK 0xFFF000
+#define QUARK_QUARK_VALUE_FLAGS_BITMASK 0xFFF000
 
 /* Data locality flag; ie keep data on the same core if possible */
 #define LOCALITY ( 1 << 12 )
